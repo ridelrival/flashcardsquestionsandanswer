@@ -1,9 +1,9 @@
-const CACHE_NAME = 'flipcard-cache-v3';
+const CACHE_NAME = 'flipcard-cache-v3.0';
 const urlsToCache = [
     './',
     './index.html',
     './manifest.json',
-    './icon.png'
+    './icon-v2.png'
 ];
 
 // Install Service Worker & Simpan Cache
