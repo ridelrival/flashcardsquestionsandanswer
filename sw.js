@@ -3,7 +3,7 @@ const urlsToCache = [
     './',
     './index.html',
     './manifest.json',
-    './icon.svg'
+    './icon.png'
 ];
 
 // Install Service Worker & Simpan Cache
