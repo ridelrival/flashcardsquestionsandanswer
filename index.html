@@ -18,7 +18,7 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-    body {
+        body {
             background-color: #f3f4f6;
             color: #333;
             height: 100dvh;
@@ -27,11 +27,10 @@
             padding: 0;
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* Mengunci layar utama agar tidak bisa ditarik/memantul */
-            overscroll-behavior: none; /* Mematikan fitur pull-to-refresh bawaan HP */
+            overflow: hidden;
+            overscroll-behavior: none;
         }
 
-        /* Center Layout & Scrollable Main */
         .main-area {
             flex: 1;
             display: flex;
@@ -39,9 +38,9 @@
             align-items: flex-start;
             padding: 1.5rem;
             width: 100%;
-            overflow-y: auto; /* Hanya area dalam sini yang bisa di-scroll */
-            overscroll-behavior-y: contain; /* Menahan scroll agar tidak bocor ke layar utama */
-            -webkit-overflow-scrolling: touch; /* Membuat scroll mulus di perangkat iOS */
+            overflow-y: auto;
+            overscroll-behavior-y: contain;
+            -webkit-overflow-scrolling: touch;
         }
 
         .main-container {
@@ -50,17 +49,15 @@
             display: flex;
             flex-direction: column;
             gap: 25px;
-            margin-bottom: 130px; /* Space for fixed footer */
+            margin-bottom: 130px;
         }
 
-        /* Wrapper for positioning icons outside the card */
         .card-wrapper {
             position: relative;
             width: 100%;
             margin-top: 40px;
         }
 
-        /* External Floating Actions */
         .card-actions {
             position: absolute;
             top: -50px;
@@ -86,22 +83,15 @@
             transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
         }
 
-        .card-icon-btn:hover {
-            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
-        }
+        .card-icon-btn:hover { box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+        .card-icon-btn:active { transform: scale(0.9); background: #f9fafb; }
 
-        .card-icon-btn:active {
-            transform: scale(0.9);
-            background: #f9fafb;
-        }
-
-        /* Flashcard Design */
         .card-scene {
             width: 100%;
             height: 300px;
             perspective: 1000px;
             cursor: pointer;
-            touch-action: pan-y; /* Allows vertical scroll naturally */
+            touch-action: pan-y;
         }
 
         .card {
@@ -112,9 +102,7 @@
             transform-style: preserve-3d;
         }
 
-        .card.is-flipped {
-            transform: rotateY(180deg);
-        }
+        .card.is-flipped { transform: rotateY(180deg); }
 
         .card-face {
             position: absolute;
@@ -159,7 +147,6 @@
             overflow-y: auto;
         }
 
-        /* Empty State */
         .card-empty {
             background: #e5e7eb;
             color: #6b7280;
@@ -167,7 +154,6 @@
             box-shadow: none;
         }
 
-        /* Front Deck List */
         .front-deck-list {
             display: flex;
             flex-direction: column;
@@ -196,9 +182,7 @@
             padding: 10px 16px;
         }
 
-        .deck-item:active {
-            transform: scale(0.98);
-        }
+        .deck-item:active { transform: scale(0.98); }
 
         .deck-item.active {
             border-color: #3b82f6;
@@ -206,17 +190,8 @@
             color: #1d4ed8;
         }
 
-        .deck-item-left {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .deck-item-right {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+        .deck-item-left { display: flex; align-items: center; gap: 6px; }
+        .deck-item-right { display: flex; align-items: center; gap: 12px; }
 
         .deck-count {
             background: #e5e7eb;
@@ -227,12 +202,8 @@
             font-weight: bold;
         }
 
-        .deck-item.active .deck-count {
-            background: #bfdbfe;
-            color: #1e3a8a;
-        }
+        .deck-item.active .deck-count { background: #bfdbfe; color: #1e3a8a; }
 
-        /* Bottom Controls */
         .footer {
             position: fixed;
             bottom: 0;
@@ -264,7 +235,6 @@
             border-radius: 20px;
         }
 
-        /* Shuffle Button Active State */
         .shuffle-btn {
             background: transparent;
             border: none;
@@ -286,9 +256,7 @@
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        .shuffle-btn:active {
-            transform: scale(0.9);
-        }
+        .shuffle-btn:active { transform: scale(0.9); }
 
         .action-row {
             display: flex;
@@ -310,20 +278,17 @@
             transition: opacity 0.2s, transform 0.2s;
         }
 
-        .btn-action:active {
-            transform: scale(0.95);
-        }
+        .btn-action:active { transform: scale(0.95); }
 
         .btn-skip { background-color: #ef4444; }
         .btn-gotit { background-color: #10b981; }
-        
+
         .btn-action:disabled {
             background-color: #d1d5db;
             cursor: not-allowed;
             transform: none;
         }
 
-        /* Modals */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -364,11 +329,7 @@
             margin-bottom: 1.5rem;
         }
 
-        .form-group label {
-            font-size: 0.85rem;
-            color: #4b5563;
-            font-weight: 600;
-        }
+        .form-group label { font-size: 0.85rem; color: #4b5563; font-weight: 600; }
 
         .form-group input, .form-group select {
             padding: 12px;
@@ -379,10 +340,7 @@
             background: white;
         }
 
-        .modal-actions {
-            display: flex;
-            gap: 10px;
-        }
+        .modal-actions { display: flex; gap: 10px; }
 
         .btn-modal {
             flex: 1;
@@ -399,10 +357,32 @@
         .btn-save { background: #4f46e5; }
         .btn-cancel { background: #9ca3af; }
         .btn-delete { background: #ef4444; width: 100%; margin-top: 10px; }
-        .btn-export { background: #f59e0b; width: 100%; margin-top: 10px;}
+        .btn-export { background: #f59e0b; width: 100%; margin-top: 10px; }
         .btn-import { background: #10b981; width: 100%; margin-top: 5px; }
+        .btn-clear-storage { background: #6b7280; width: 100%; margin-top: 5px; font-size: 0.85rem; }
 
-        /* Toast */
+        /* Storage indicator badge */
+        .storage-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.78rem;
+            color: #6b7280;
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-bottom: 4px;
+        }
+
+        .storage-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            flex-shrink: 0;
+        }
+
         .toast {
             position: fixed;
             top: 40px;
@@ -419,9 +399,7 @@
             z-index: 150;
         }
 
-        .toast.show {
-            opacity: 1;
-        }
+        .toast.show { opacity: 1; }
     </style>
 </head>
 <body>
@@ -430,7 +408,7 @@
 
     <div class="main-area">
         <div class="main-container">
-            
+
             <div class="card-wrapper">
                 <div class="card-actions">
                     <button class="card-icon-btn" onclick="openModal('addModal')">➕</button>
@@ -460,7 +438,7 @@
                         <span class="deck-count" id="count-main">0</span>
                     </div>
                 </div>
-                
+
                 <div class="deck-item sub-deck" id="deck-skipped"
                      onclick="handleDeckClick(event, 'skipped')"
                      ontouchstart="startDeckPress(event, 'skipped')"
@@ -507,6 +485,7 @@
         </div>
     </div>
 
+    <!-- Add Modal -->
     <div class="modal-overlay" id="addModal">
         <div class="modal">
             <h2 data-i18n="addCardTitle">Add Card</h2>
@@ -523,6 +502,7 @@
         </div>
     </div>
 
+    <!-- Edit Modal -->
     <div class="modal-overlay" id="editModal">
         <div class="modal">
             <h2 data-i18n="editCardTitle">Edit Card</h2>
@@ -540,11 +520,18 @@
         </div>
     </div>
 
+    <!-- Settings Modal -->
     <div class="modal-overlay" id="settingsModal">
         <div class="modal">
             <h2 data-i18n="settingsTitle">Settings</h2>
-            
-            <div class="form-group">
+
+            <!-- Storage Status -->
+            <div class="storage-badge">
+                <div class="storage-dot"></div>
+                <span id="storage-info" data-i18n="storageInfo">Data tersimpan di perangkat</span>
+            </div>
+
+            <div class="form-group" style="margin-top: 12px;">
                 <label data-i18n="languageLabel">Language</label>
                 <select id="lang-select" onchange="changeLanguage(this.value)">
                     <option value="en">English</option>
@@ -554,9 +541,11 @@
             </div>
 
             <button class="btn-modal btn-export" onclick="exportToCSV()" data-i18n="backupCsv">Backup Active Deck to CSV</button>
-            
+
             <input type="file" id="import-file" accept=".csv" style="display: none;" onchange="handleImport(event)">
             <button class="btn-modal btn-import" onclick="document.getElementById('import-file').click()" data-i18n="importCsv">Import Backup CSV</button>
+
+            <button class="btn-modal btn-clear-storage" onclick="clearAllStorage()" data-i18n="clearStorage">🗑 Hapus Semua Data Tersimpan</button>
 
             <div class="modal-actions" style="margin-top: 15px;">
                 <button class="btn-modal btn-cancel" onclick="closeModal('settingsModal')" data-i18n="close">Close</button>
@@ -565,154 +554,199 @@
     </div>
 
     <script>
-        // Dictionary for i18n
+        // =============================================
+        //  STORAGE KEYS
+        // =============================================
+        const STORAGE_KEY_DECKS        = 'flipcard_decks_v1';
+        const STORAGE_KEY_ACTIVE_DECK  = 'flipcard_activeDeck_v1';
+        const STORAGE_KEY_CURRENT_IDX  = 'flipcard_currentIndex_v1';
+        const STORAGE_KEY_LANG         = 'flipcard_lang';
+
+        // =============================================
+        //  DICTIONARY i18n
+        // =============================================
         const dict = {
             en: {
-                question: "Question",
-                answer: "Answer",
-                mainDeck: "Main Deck",
-                skippedDeck: "Skipped",
-                gotItDeck: "Got It",
-                skip: "Skip",
-                gotIt: "Got It",
-                addCardTitle: "Add Card",
-                editCardTitle: "Edit Card",
-                settingsTitle: "Settings",
-                questionLabel: "Question / Statement",
-                answerLabel: "Answer",
-                qPlaceholder: "Enter question...",
-                aPlaceholder: "Enter answer...",
-                cancel: "Cancel",
-                save: "Save",
-                deleteCard: "Delete Card",
+                question: "Question", answer: "Answer",
+                mainDeck: "Main Deck", skippedDeck: "Skipped", gotItDeck: "Got It",
+                skip: "Skip", gotIt: "Got It",
+                addCardTitle: "Add Card", editCardTitle: "Edit Card", settingsTitle: "Settings",
+                questionLabel: "Question / Statement", answerLabel: "Answer",
+                qPlaceholder: "Enter question...", aPlaceholder: "Enter answer...",
+                cancel: "Cancel", save: "Save", deleteCard: "Delete Card",
                 languageLabel: "Language",
-                backupCsv: "Backup Active Deck to CSV",
-                importCsv: "Import Backup CSV",
-                close: "Close",
-                emptyCard: "No cards available",
-                toastAdded: "Added to Main Deck",
-                toastUpdated: "Card Updated",
-                toastDeleted: "Card Deleted",
-                toastSkipped: "Copied to Skipped",
-                toastGotIt: "Copied to Got It",
-                toastShuffled: "Deck Shuffled",
-                toastReset: "Deck Reset",
-                toastImported: "Cards Imported",
-                toastEmptyBackup: "Deck is empty!",
-                confirmReset: "Are you sure you want to reset this deck?"
+                backupCsv: "Backup Active Deck to CSV", importCsv: "Import Backup CSV",
+                close: "Close", emptyCard: "No cards available",
+                storageInfo: "✅ Data saved on this device",
+                clearStorage: "🗑 Delete All Saved Data",
+                toastAdded: "Added to Main Deck", toastUpdated: "Card Updated",
+                toastDeleted: "Card Deleted", toastSkipped: "Copied to Skipped",
+                toastGotIt: "Copied to Got It", toastShuffled: "Deck Shuffled",
+                toastReset: "Deck Reset", toastImported: "Cards Imported",
+                toastEmptyBackup: "Deck is empty!", toastSaved: "Saved!",
+                toastStorageCleared: "All data cleared",
+                confirmReset: "Are you sure you want to reset this deck?",
+                confirmClearAll: "Delete ALL saved data? This cannot be undone!"
             },
             id: {
-                question: "Pertanyaan",
-                answer: "Jawaban",
-                mainDeck: "Main Deck",
-                skippedDeck: "Skipped",
-                gotItDeck: "Got It",
-                skip: "Skip",
-                gotIt: "Got It",
-                addCardTitle: "Tambah Kartu",
-                editCardTitle: "Edit Kartu",
-                settingsTitle: "Pengaturan",
-                questionLabel: "Pertanyaan / Pernyataan",
-                answerLabel: "Jawaban",
-                qPlaceholder: "Masukkan pertanyaan...",
-                aPlaceholder: "Masukkan jawaban...",
-                cancel: "Batal",
-                save: "Simpan",
-                deleteCard: "Hapus Kartu",
+                question: "Pertanyaan", answer: "Jawaban",
+                mainDeck: "Main Deck", skippedDeck: "Skipped", gotItDeck: "Got It",
+                skip: "Skip", gotIt: "Got It",
+                addCardTitle: "Tambah Kartu", editCardTitle: "Edit Kartu", settingsTitle: "Pengaturan",
+                questionLabel: "Pertanyaan / Pernyataan", answerLabel: "Jawaban",
+                qPlaceholder: "Masukkan pertanyaan...", aPlaceholder: "Masukkan jawaban...",
+                cancel: "Batal", save: "Simpan", deleteCard: "Hapus Kartu",
                 languageLabel: "Bahasa",
-                backupCsv: "Backup Deck Aktif ke CSV",
-                importCsv: "Impor Backup CSV",
-                close: "Tutup",
-                emptyCard: "Tidak ada kartu",
-                toastAdded: "Ditambahkan ke Main Deck",
-                toastUpdated: "Kartu Diperbarui",
-                toastDeleted: "Kartu Dihapus",
-                toastSkipped: "Disalin ke Skipped",
-                toastGotIt: "Disalin ke Got It",
-                toastShuffled: "Deck Diacak",
-                toastReset: "Deck Direset",
-                toastImported: "Kartu Diimpor",
-                toastEmptyBackup: "Deck kosong!",
-                confirmReset: "Apakah Anda yakin ingin mereset deck ini?"
+                backupCsv: "Backup Deck Aktif ke CSV", importCsv: "Impor Backup CSV",
+                close: "Tutup", emptyCard: "Tidak ada kartu",
+                storageInfo: "✅ Data tersimpan di perangkat ini",
+                clearStorage: "🗑 Hapus Semua Data Tersimpan",
+                toastAdded: "Ditambahkan ke Main Deck", toastUpdated: "Kartu Diperbarui",
+                toastDeleted: "Kartu Dihapus", toastSkipped: "Disalin ke Skipped",
+                toastGotIt: "Disalin ke Got It", toastShuffled: "Deck Diacak",
+                toastReset: "Deck Direset", toastImported: "Kartu Diimpor",
+                toastEmptyBackup: "Deck kosong!", toastSaved: "Tersimpan!",
+                toastStorageCleared: "Semua data dihapus",
+                confirmReset: "Apakah Anda yakin ingin mereset deck ini?",
+                confirmClearAll: "Hapus SEMUA data tersimpan? Tindakan ini tidak bisa dibatalkan!"
             },
             ja: {
-                question: "質問",
-                answer: "答え",
-                mainDeck: "メインデッキ",
-                skippedDeck: "スキップ済み",
-                gotItDeck: "習得済み",
-                skip: "スキップ",
-                gotIt: "習得",
-                addCardTitle: "カードを追加",
-                editCardTitle: "カードを編集",
-                settingsTitle: "設定",
-                questionLabel: "質問 / 記述",
-                answerLabel: "答え",
-                qPlaceholder: "質問を入力...",
-                aPlaceholder: "答えを入力...",
-                cancel: "キャンセル",
-                save: "保存",
-                deleteCard: "カードを削除",
+                question: "質問", answer: "答え",
+                mainDeck: "メインデッキ", skippedDeck: "スキップ済み", gotItDeck: "習得済み",
+                skip: "スキップ", gotIt: "習得",
+                addCardTitle: "カードを追加", editCardTitle: "カードを編集", settingsTitle: "設定",
+                questionLabel: "質問 / 記述", answerLabel: "答え",
+                qPlaceholder: "質問を入力...", aPlaceholder: "答えを入力...",
+                cancel: "キャンセル", save: "保存", deleteCard: "カードを削除",
                 languageLabel: "言語",
-                backupCsv: "CSVへエクスポート",
-                importCsv: "CSVバックアップをインポート",
-                close: "閉じる",
-                emptyCard: "カードがありません",
-                toastAdded: "メインデッキに追加しました",
-                toastUpdated: "カードを更新しました",
-                toastDeleted: "カードを削除しました",
-                toastSkipped: "スキップ済みにコピーしました",
-                toastGotIt: "習得済みにコピーしました",
-                toastShuffled: "デッキをシャッフルしました",
-                toastReset: "デッキをリセットしました",
-                toastImported: "カードをインポートしました",
-                toastEmptyBackup: "デッキが空です！",
-                confirmReset: "このデッキをリセットしてもよろしいですか？"
+                backupCsv: "CSVへエクスポート", importCsv: "CSVバックアップをインポート",
+                close: "閉じる", emptyCard: "カードがありません",
+                storageInfo: "✅ このデバイスに保存済み",
+                clearStorage: "🗑 保存データをすべて削除",
+                toastAdded: "メインデッキに追加しました", toastUpdated: "カードを更新しました",
+                toastDeleted: "カードを削除しました", toastSkipped: "スキップ済みにコピーしました",
+                toastGotIt: "習得済みにコピーしました", toastShuffled: "デッキをシャッフルしました",
+                toastReset: "デッキをリセットしました", toastImported: "カードをインポートしました",
+                toastEmptyBackup: "デッキが空です！", toastSaved: "保存しました！",
+                toastStorageCleared: "全データを削除しました",
+                confirmReset: "このデッキをリセットしてもよろしいですか？",
+                confirmClearAll: "保存データをすべて削除しますか？この操作は元に戻せません！"
             }
         };
 
-        // State
-        const decks = {
-            main: [],
-            skipped: [],
-            gotIt: []
-        };
-        let activeDeck = 'main';
-        let currentIndex = 0;
-        let editingId = null;
-        let currentLang = localStorage.getItem('flipcard_lang') || 'en';
+        // =============================================
+        //  STATE — loaded from localStorage on boot
+        // =============================================
+        let decks = { main: [], skipped: [], gotIt: [] };
+        let activeDeck    = 'main';
+        let currentIndex  = 0;
+        let editingId     = null;
+        let currentLang   = localStorage.getItem(STORAGE_KEY_LANG) || 'en';
 
-        // DOM Elements
-        const flashcard = document.getElementById('flashcard');
-        const cardScene = document.getElementById('cardScene');
-        const cardFront = document.getElementById('card-front');
-        const cardBack = document.getElementById('card-back');
-        const qText = document.getElementById('q-text');
-        const aText = document.getElementById('a-text');
-        const counter = document.getElementById('card-counter');
-        const deckIndicator = document.getElementById('deck-indicator');
-        const btnSkip = document.getElementById('btn-skip');
-        const btnGotIt = document.getElementById('btn-gotit');
-        const shuffleBtn = document.getElementById('shuffle-btn');
-        const langSelect = document.getElementById('lang-select');
+        // =============================================
+        //  PERSISTENCE HELPERS
+        // =============================================
 
-        // Helpers
+        /**
+         * Save the entire app state to localStorage.
+         * Called after every mutation that changes decks, activeDeck, or currentIndex.
+         */
+        function saveState() {
+            try {
+                localStorage.setItem(STORAGE_KEY_DECKS,       JSON.stringify(decks));
+                localStorage.setItem(STORAGE_KEY_ACTIVE_DECK, activeDeck);
+                localStorage.setItem(STORAGE_KEY_CURRENT_IDX, String(currentIndex));
+            } catch (e) {
+                // localStorage quota exceeded — notify user
+                console.warn('localStorage save failed:', e);
+            }
+        }
+
+        /**
+         * Load saved state from localStorage.
+         * Returns true if valid data was found, false otherwise.
+         */
+        function loadState() {
+            try {
+                const savedDecks = localStorage.getItem(STORAGE_KEY_DECKS);
+                if (savedDecks) {
+                    const parsed = JSON.parse(savedDecks);
+                    // Validate structure before using
+                    if (parsed && typeof parsed === 'object') {
+                        decks.main    = Array.isArray(parsed.main)    ? parsed.main    : [];
+                        decks.skipped = Array.isArray(parsed.skipped) ? parsed.skipped : [];
+                        decks.gotIt   = Array.isArray(parsed.gotIt)   ? parsed.gotIt   : [];
+                    }
+                }
+                const savedDeck = localStorage.getItem(STORAGE_KEY_ACTIVE_DECK);
+                if (savedDeck && ['main','skipped','gotIt'].includes(savedDeck)) {
+                    activeDeck = savedDeck;
+                }
+                const savedIdx = localStorage.getItem(STORAGE_KEY_CURRENT_IDX);
+                if (savedIdx !== null) {
+                    currentIndex = parseInt(savedIdx, 10) || 0;
+                }
+                return true;
+            } catch (e) {
+                console.warn('localStorage load failed:', e);
+                return false;
+            }
+        }
+
+        /** Clear everything from localStorage (user-triggered). */
+        function clearAllStorage() {
+            if (!confirm(t('confirmClearAll'))) return;
+            localStorage.removeItem(STORAGE_KEY_DECKS);
+            localStorage.removeItem(STORAGE_KEY_ACTIVE_DECK);
+            localStorage.removeItem(STORAGE_KEY_CURRENT_IDX);
+            decks = { main: [], skipped: [], gotIt: [] };
+            activeDeck   = 'main';
+            currentIndex = 0;
+            updateDeckIndicatorText();
+            updateDisplay();
+            document.querySelectorAll('.deck-item').forEach(el => el.classList.remove('active'));
+            document.getElementById('deck-main').classList.add('active');
+            closeModal('settingsModal');
+            showToast('toastStorageCleared');
+        }
+
+        // =============================================
+        //  DOM ELEMENTS
+        // =============================================
+        const flashcard    = document.getElementById('flashcard');
+        const cardScene    = document.getElementById('cardScene');
+        const cardFront    = document.getElementById('card-front');
+        const cardBack     = document.getElementById('card-back');
+        const qText        = document.getElementById('q-text');
+        const aText        = document.getElementById('a-text');
+        const counter      = document.getElementById('card-counter');
+        const deckIndicator= document.getElementById('deck-indicator');
+        const btnSkip      = document.getElementById('btn-skip');
+        const btnGotIt     = document.getElementById('btn-gotit');
+        const shuffleBtn   = document.getElementById('shuffle-btn');
+        const langSelect   = document.getElementById('lang-select');
+
+        // =============================================
+        //  HELPERS
+        // =============================================
         function generateId() {
             return Date.now().toString(36) + Math.random().toString(36).substr(2);
         }
 
         function showToast(msgKey) {
             const toast = document.getElementById('toast');
-            toast.innerText = dict[currentLang][msgKey];
+            toast.innerText = dict[currentLang][msgKey] || msgKey;
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 2000);
         }
 
         function t(key) {
-            return dict[currentLang][key];
+            return dict[currentLang][key] || key;
         }
 
-        // Language & i18n
+        // =============================================
+        //  LANGUAGE & i18n
+        // =============================================
         function applyLanguage() {
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
@@ -731,30 +765,28 @@
 
         function changeLanguage(lang) {
             currentLang = lang;
-            localStorage.setItem('flipcard_lang', lang);
+            localStorage.setItem(STORAGE_KEY_LANG, lang);
             applyLanguage();
         }
 
-        // Display Logic
+        // =============================================
+        //  DISPLAY LOGIC
+        // =============================================
         function updateDeckCounts() {
-            document.getElementById('count-main').innerText = decks.main.length;
+            document.getElementById('count-main').innerText    = decks.main.length;
             document.getElementById('count-skipped').innerText = decks.skipped.length;
-            document.getElementById('count-gotIt').innerText = decks.gotIt.length;
+            document.getElementById('count-gotIt').innerText   = decks.gotIt.length;
         }
 
         function updateDeckIndicatorText() {
-            const mapping = {
-                main: 'mainDeck',
-                skipped: 'skippedDeck',
-                gotIt: 'gotItDeck'
-            };
+            const mapping = { main: 'mainDeck', skipped: 'skippedDeck', gotIt: 'gotItDeck' };
             deckIndicator.innerText = t(mapping[activeDeck]);
         }
 
         function updateDisplay() {
             const deck = decks[activeDeck];
             updateDeckCounts();
-            
+
             if (deck.length === 0) {
                 cardFront.classList.add('card-empty');
                 cardBack.classList.add('card-empty');
@@ -763,7 +795,7 @@
                 cardFront.querySelector('.card-title').style.display = 'none';
                 cardBack.querySelector('.card-title').style.display = 'none';
                 counter.innerText = "0 / 0";
-                btnSkip.disabled = true;
+                btnSkip.disabled  = true;
                 btnGotIt.disabled = true;
                 flashcard.classList.remove('is-flipped');
                 return;
@@ -773,8 +805,8 @@
             if (currentIndex < 0) currentIndex = 0;
 
             const card = deck[currentIndex];
-            
-            btnSkip.disabled = false;
+
+            btnSkip.disabled  = false;
             btnGotIt.disabled = false;
             cardFront.classList.remove('card-empty');
             cardBack.classList.remove('card-empty');
@@ -782,15 +814,17 @@
             cardBack.querySelector('.card-title').style.display = 'block';
 
             flashcard.classList.remove('is-flipped');
-            
+
             setTimeout(() => {
-                qText.innerText = card.q;
-                aText.innerText = card.a;
-                counter.innerText = `${currentIndex + 1} / ${deck.length}`;
+                qText.innerText    = card.q;
+                aText.innerText    = card.a;
+                counter.innerText  = `${currentIndex + 1} / ${deck.length}`;
             }, 150);
         }
 
-        // --- Deck Reset via Long Press Logic ---
+        // =============================================
+        //  DECK SWITCHING & LONG PRESS RESET
+        // =============================================
         let deckPressTimer;
         let isDeckLongPress = false;
 
@@ -802,25 +836,19 @@
             }, 500);
         }
 
-        function cancelDeckPress() {
-            clearTimeout(deckPressTimer);
-        }
+        function cancelDeckPress() { clearTimeout(deckPressTimer); }
 
         function handleDeckClick(e, deckName) {
-            // Prevent normal click if it was a long press
-            if (isDeckLongPress) {
-                e.preventDefault();
-                return;
-            }
+            if (isDeckLongPress) { e.preventDefault(); return; }
             changeDeck(deckName);
         }
 
         function changeDeck(deckName) {
-            activeDeck = deckName;
+            activeDeck   = deckName;
             currentIndex = 0;
             updateDeckIndicatorText();
             updateDisplay();
-            
+            saveState(); // persist deck switch
             document.querySelectorAll('.deck-item').forEach(el => el.classList.remove('active'));
             document.getElementById(`deck-${deckName}`).classList.add('active');
         }
@@ -834,19 +862,20 @@
                 } else {
                     updateDeckCounts();
                 }
+                saveState(); // persist reset
                 showToast('toastReset');
             }
         }
 
-        function openModal(id) {
-            document.getElementById(id).style.display = 'flex';
-        }
+        // =============================================
+        //  MODALS
+        // =============================================
+        function openModal(id)  { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-        function closeModal(id) {
-            document.getElementById(id).style.display = 'none';
-        }
-
-        // CRUD Actions
+        // =============================================
+        //  CRUD ACTIONS
+        // =============================================
         function saveNewCard() {
             const q = document.getElementById('add-q').value.trim();
             const a = document.getElementById('add-a').value.trim();
@@ -855,13 +884,14 @@
             decks.main.push({ id: generateId(), q, a });
             document.getElementById('add-q').value = '';
             document.getElementById('add-a').value = '';
-            
+
             if (activeDeck === 'main') {
                 currentIndex = decks.main.length - 1;
                 updateDisplay();
             } else {
                 updateDeckCounts();
             }
+            saveState(); // ← persist
             closeModal('addModal');
             showToast('toastAdded');
         }
@@ -869,7 +899,6 @@
         function openEditor() {
             const deck = decks[activeDeck];
             if (!deck.length) return;
-
             const card = deck[currentIndex];
             editingId = card.id;
             document.getElementById('edit-q').value = card.q;
@@ -883,23 +912,22 @@
             if (!q || !a) return;
 
             const card = decks[activeDeck].find(c => c.id === editingId);
-            if (card) {
-                card.q = q;
-                card.a = a;
-                updateDisplay();
-                showToast('toastUpdated');
-            }
+            if (card) { card.q = q; card.a = a; updateDisplay(); showToast('toastUpdated'); }
+            saveState(); // ← persist
             closeModal('editModal');
         }
 
         function deleteCard() {
             decks[activeDeck] = decks[activeDeck].filter(c => c.id !== editingId);
             updateDisplay();
+            saveState(); // ← persist
             closeModal('editModal');
             showToast('toastDeleted');
         }
 
-        // Deck Controls
+        // =============================================
+        //  DECK CONTROLS
+        // =============================================
         function handleSkip() {
             const deck = decks[activeDeck];
             if (!deck.length) return;
@@ -907,8 +935,8 @@
 
             if (!decks.skipped.some(c => c.id === card.id)) {
                 decks.skipped.push({ ...card });
-                updateDeckCounts();
             }
+            saveState(); // ← persist
             showToast('toastSkipped');
             nextCard();
         }
@@ -920,15 +948,14 @@
 
             if (!decks.gotIt.some(c => c.id === card.id)) {
                 decks.gotIt.push({ ...card });
-                updateDeckCounts();
             }
+            saveState(); // ← persist
             showToast('toastGotIt');
             nextCard();
         }
 
         function toggleShuffle() {
             shuffleBtn.classList.toggle('active');
-            
             const deck = decks[activeDeck];
             if (deck.length <= 1) return;
 
@@ -938,10 +965,9 @@
             }
             currentIndex = 0;
             updateDisplay();
-            
-            if (shuffleBtn.classList.contains('active')) {
-                showToast('toastShuffled');
-            }
+            saveState(); // ← persist shuffled order
+
+            if (shuffleBtn.classList.contains('active')) showToast('toastShuffled');
         }
 
         function nextCard() {
@@ -949,6 +975,7 @@
             if (deck.length > 0) {
                 currentIndex = (currentIndex + 1) % deck.length;
                 updateDisplay();
+                saveState(); // ← persist index
             }
         }
 
@@ -957,16 +984,16 @@
             if (deck.length > 0) {
                 currentIndex = (currentIndex - 1 + deck.length) % deck.length;
                 updateDisplay();
+                saveState(); // ← persist index
             }
         }
 
-        // --- Export / Import CSV ---
+        // =============================================
+        //  EXPORT / IMPORT CSV
+        // =============================================
         function exportToCSV() {
             const deck = decks[activeDeck];
-            if (deck.length === 0) {
-                showToast('toastEmptyBackup');
-                return;
-            }
+            if (deck.length === 0) { showToast('toastEmptyBackup'); return; }
 
             let csvContent = "Question,Answer\n";
             deck.forEach(card => {
@@ -987,24 +1014,12 @@
 
         function parseCSVRow(str) {
             const arr = [];
-            let quote = false;
-            let col = '';
+            let quote = false, col = '';
             for (let i = 0; i < str.length; i++) {
                 let cc = str[i], nc = str[i+1];
-                if (cc === '"' && quote && nc === '"') {
-                    col += '"';
-                    i++;
-                    continue;
-                }
-                if (cc === '"') {
-                    quote = !quote;
-                    continue;
-                }
-                if (cc === ',' && !quote) {
-                    arr.push(col);
-                    col = '';
-                    continue;
-                }
+                if (cc === '"' && quote && nc === '"') { col += '"'; i++; continue; }
+                if (cc === '"') { quote = !quote; continue; }
+                if (cc === ',' && !quote) { arr.push(col); col = ''; continue; }
                 col += cc;
             }
             arr.push(col);
@@ -1017,62 +1032,58 @@
 
             const reader = new FileReader();
             reader.onload = function(e) {
-                const text = e.target.result;
-                const lines = text.split('\n');
+                const text   = e.target.result;
+                const lines  = text.split('\n');
                 const newCards = [];
-                
-                for (let i = 1; i < lines.length; i++) { // Skip header
+
+                for (let i = 1; i < lines.length; i++) {
                     const line = lines[i].trim();
                     if (!line) continue;
-                    
                     const cols = parseCSVRow(line);
                     if (cols.length >= 2) {
                         newCards.push({ id: generateId(), q: cols[0].trim(), a: cols[1].trim() });
                     }
                 }
-                
+
                 if (newCards.length > 0) {
                     decks[activeDeck].push(...newCards);
                     updateDisplay();
+                    saveState(); // ← persist imported cards
                     showToast('toastImported');
                 } else {
                     alert("Invalid or empty CSV format.");
                 }
-                event.target.value = ''; // Reset input
+                event.target.value = '';
                 closeModal('settingsModal');
             };
             reader.readAsText(file);
         }
 
-        // --- Swipe & Long Press for Flashcard ---
-        let touchstartX = 0;
-        let touchstartY = 0;
-        let touchendX = 0;
-        let touchendY = 0;
+        // =============================================
+        //  SWIPE & LONG PRESS (Flashcard)
+        // =============================================
+        let touchstartX = 0, touchstartY = 0;
+        let touchendX   = 0, touchendY   = 0;
         let pressTimer;
         let isCardLongPress = false;
 
         const startCardPress = (e) => {
             if (decks[activeDeck].length === 0) return;
             isCardLongPress = false;
-            pressTimer = setTimeout(() => {
-                isCardLongPress = true;
-                openEditor();
-            }, 500);
+            pressTimer = setTimeout(() => { isCardLongPress = true; openEditor(); }, 500);
         };
 
         const cancelCardPress = () => clearTimeout(pressTimer);
 
         const handleCardSwipe = () => {
-            const thresholdX = 50;
-            const diffX = touchendX - touchstartX;
-            const MathAbsDiffX = Math.abs(diffX);
-            const MathAbsDiffY = Math.abs(touchendY - touchstartY);
-            
-            // Trigger swipe only if it's prominently horizontal (prevents conflict with natural vertical scrolling)
+            const thresholdX    = 50;
+            const diffX         = touchendX - touchstartX;
+            const MathAbsDiffX  = Math.abs(diffX);
+            const MathAbsDiffY  = Math.abs(touchendY - touchstartY);
+
             if (MathAbsDiffX > MathAbsDiffY && MathAbsDiffX > thresholdX) {
                 if (diffX < -thresholdX) nextCard();
-                if (diffX > thresholdX) prevCard();
+                if (diffX >  thresholdX) prevCard();
             }
         };
 
@@ -1107,28 +1118,34 @@
         cardScene.addEventListener('mouseleave', cancelCardPress);
 
         cardScene.addEventListener('click', (e) => {
-            if (isCardLongPress) {
-                e.preventDefault();
-                return;
-            }
-            if (decks[activeDeck].length > 0) {
-                flashcard.classList.toggle('is-flipped');
-            }
+            if (isCardLongPress) { e.preventDefault(); return; }
+            if (decks[activeDeck].length > 0) flashcard.classList.toggle('is-flipped');
         });
 
-// Init App
-        applyLanguage();
-        updateDisplay();
+        // =============================================
+        //  INIT APP
+        // =============================================
+        (function init() {
+            // 1. Load persisted state
+            loadState();
 
-        // TAMBAHKAN KODE INI DI SINI
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker Registered!', reg))
-                    .catch(err => console.error('Service Worker Registration Failed!', err));
-            });
-        }
-        // ========================
+            // 2. Sync active deck UI
+            document.querySelectorAll('.deck-item').forEach(el => el.classList.remove('active'));
+            const activeDeckEl = document.getElementById(`deck-${activeDeck}`);
+            if (activeDeckEl) activeDeckEl.classList.add('active');
+
+            // 3. Apply language (also calls updateDisplay)
+            applyLanguage();
+
+            // 4. Register Service Worker for PWA
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('./sw.js')
+                        .then(reg => console.log('Service Worker Registered!', reg))
+                        .catch(err => console.error('Service Worker Registration Failed!', err));
+                });
+            }
+        })();
     </script>
 </body>
 </html>
