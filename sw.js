@@ -1,4 +1,4 @@
-const CACHE_NAME = 'flipcard-cache-v3.0';
+const CACHE_NAME = 'flipcard-cache-v4.0';
 const urlsToCache = [
     './',
     './index.html',
