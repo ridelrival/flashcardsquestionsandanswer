@@ -1,17 +1,22 @@
 {
-  "name": "Flipcard App Pro",
+  "id": "./",
+  "name": "Flipcard Study",
   "short_name": "Flipcard",
-  "description": "Aplikasi Belajar Flipcard Offline",
-  "start_url": "./index.html",
+  "description": "A private, offline-first spaced-repetition flashcard app.",
+  "lang": "en",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#f3f4f6",
-  "theme_color": "#3b82f6",
+  "orientation": "any",
+  "background_color": "#f5f7fb",
+  "theme_color": "#2563eb",
+  "categories": ["education", "productivity"],
   "icons": [
     {
       "src": "./icon-v2.png",
-      "sizes": "72x72 96x96 128x128 144x144 152x152 192x192 384x384 512x512 any",
+      "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }

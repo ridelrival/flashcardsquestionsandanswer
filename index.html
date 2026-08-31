@@ -1,1151 +1,203 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Flipcard App Pro</title>
-
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#3157d5">
+    <meta name="description" content="A private, offline-first spaced-repetition flashcard app.">
+    <title>Flipcard Study</title>
     <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#3b82f6">
     <link rel="icon" type="image/png" href="./icon-v2.png">
     <link rel="apple-touch-icon" href="./icon-v2.png">
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
+    <link rel="stylesheet" href="./styles.css">
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#study-card" data-i18n="skipToCard">Skip to study card</a>
 
-        body {
-            background-color: #f3f4f6;
-            color: #333;
-            height: 100dvh;
-            width: 100vw;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            overscroll-behavior: none;
-        }
-
-        .main-area {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            padding: 1.5rem;
-            width: 100%;
-            overflow-y: auto;
-            overscroll-behavior-y: contain;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .main-container {
-            width: 100%;
-            max-width: 400px;
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
-            margin-bottom: 130px;
-        }
-
-        .card-wrapper {
-            position: relative;
-            width: 100%;
-            margin-top: 40px;
-        }
-
-        .card-actions {
-            position: absolute;
-            top: -50px;
-            right: 0;
-            display: flex;
-            gap: 12px;
-            z-index: 50;
-        }
-
-        .card-icon-btn {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            color: #4b5563;
-            transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
-        }
-
-        .card-icon-btn:hover { box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
-        .card-icon-btn:active { transform: scale(0.9); background: #f9fafb; }
-
-        .card-scene {
-            width: 100%;
-            height: 300px;
-            perspective: 1000px;
-            cursor: pointer;
-            touch-action: pan-y;
-        }
-
-        .card {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
-            transform-style: preserve-3d;
-        }
-
-        .card.is-flipped { transform: rotateY(180deg); }
-
-        .card-face {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            backface-visibility: hidden;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            border-radius: 16px;
-            padding: 2rem;
-            text-align: center;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-            user-select: none;
-        }
-
-        .card-front {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: white;
-        }
-
-        .card-back {
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: white;
-            transform: rotateY(180deg);
-        }
-
-        .card-title {
-            font-size: 0.85rem;
-            opacity: 0.8;
-            margin-bottom: 15px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .card-content {
-            font-size: 1.6rem;
-            font-weight: bold;
-            line-height: 1.4;
-            max-height: 100%;
-            overflow-y: auto;
-        }
-
-        .card-empty {
-            background: #e5e7eb;
-            color: #6b7280;
-            border: 2px dashed #9ca3af;
-            box-shadow: none;
-        }
-
-        .front-deck-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .deck-item {
-            padding: 14px 16px;
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.2s ease;
-            font-weight: 600;
-            color: #374151;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            user-select: none;
-        }
-
-        .deck-item.sub-deck {
-            margin-left: 20px;
-            font-weight: 500;
-            padding: 10px 16px;
-        }
-
-        .deck-item:active { transform: scale(0.98); }
-
-        .deck-item.active {
-            border-color: #3b82f6;
-            background: #eff6ff;
-            color: #1d4ed8;
-        }
-
-        .deck-item-left { display: flex; align-items: center; gap: 6px; }
-        .deck-item-right { display: flex; align-items: center; gap: 12px; }
-
-        .deck-count {
-            background: #e5e7eb;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            color: #4b5563;
-            font-weight: bold;
-        }
-
-        .deck-item.active .deck-count { background: #bfdbfe; color: #1e3a8a; }
-
-        .footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-            z-index: 10;
-            background: linear-gradient(to top, #f3f4f6 80%, rgba(243, 244, 246, 0.9) 90%, rgba(243, 244, 246, 0));
-        }
-
-        .meta-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-            max-width: 400px;
-        }
-
-        .counter {
-            font-size: 0.9rem;
-            color: #6b7280;
-            font-weight: bold;
-            background: #e5e7eb;
-            padding: 4px 12px;
-            border-radius: 20px;
-        }
-
-        .shuffle-btn {
-            background: transparent;
-            border: none;
-            font-size: 1.2rem;
-            color: #4b5563;
-            cursor: pointer;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: background 0.2s ease, color 0.2s ease, transform 0.2s;
-        }
-
-        .shuffle-btn.active {
-            background: #d1d5db;
-            color: #2563eb;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .shuffle-btn:active { transform: scale(0.9); }
-
-        .action-row {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            max-width: 400px;
-            gap: 1rem;
-        }
-
-        .btn-action {
-            flex: 1;
-            padding: 14px;
-            border: none;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-            color: white;
-            transition: opacity 0.2s, transform 0.2s;
-        }
-
-        .btn-action:active { transform: scale(0.95); }
-
-        .btn-skip { background-color: #ef4444; }
-        .btn-gotit { background-color: #10b981; }
-
-        .btn-action:disabled {
-            background-color: #d1d5db;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            backdrop-filter: blur(2px);
-        }
-
-        .modal {
-            background: white;
-            width: 90%;
-            max-width: 360px;
-            border-radius: 16px;
-            padding: 1.5rem;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            animation: slideUp 0.3s ease;
-        }
-
-        @keyframes slideUp {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .modal h2 {
-            margin-bottom: 1.2rem;
-            font-size: 1.2rem;
-            color: #1f2937;
-            text-align: center;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label { font-size: 0.85rem; color: #4b5563; font-weight: 600; }
-
-        .form-group input, .form-group select {
-            padding: 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            font-size: 1rem;
-            width: 100%;
-            background: white;
-        }
-
-        .modal-actions { display: flex; gap: 10px; }
-
-        .btn-modal {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            color: white;
-            text-align: center;
-            display: inline-block;
-        }
-
-        .btn-save { background: #4f46e5; }
-        .btn-cancel { background: #9ca3af; }
-        .btn-delete { background: #ef4444; width: 100%; margin-top: 10px; }
-        .btn-export { background: #f59e0b; width: 100%; margin-top: 10px; }
-        .btn-import { background: #10b981; width: 100%; margin-top: 5px; }
-        .btn-clear-storage { background: #6b7280; width: 100%; margin-top: 5px; font-size: 0.85rem; }
-
-        /* Storage indicator badge */
-        .storage-badge {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.78rem;
-            color: #6b7280;
-            background: #f3f4f6;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 8px 12px;
-            margin-bottom: 4px;
-        }
-
-        .storage-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #10b981;
-            flex-shrink: 0;
-        }
-
-        .toast {
-            position: fixed;
-            top: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(31, 41, 55, 0.9);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s;
-            z-index: 150;
-        }
-
-        .toast.show { opacity: 1; }
-    </style>
-</head>
-<body>
-
-    <div id="toast" class="toast"></div>
-
-    <div class="main-area">
-        <div class="main-container">
-
-            <div class="card-wrapper">
-                <div class="card-actions">
-                    <button class="card-icon-btn" onclick="openModal('addModal')">➕</button>
-                    <button class="card-icon-btn" onclick="openModal('settingsModal')">⚙️</button>
-                </div>
-
-                <div class="card-scene" id="cardScene" oncontextmenu="return false;">
-                    <div class="card" id="flashcard">
-                        <div class="card-face card-front" id="card-front">
-                            <div class="card-title" data-i18n="question">Question</div>
-                            <div class="card-content" id="q-text"></div>
-                        </div>
-                        <div class="card-face card-back" id="card-back">
-                            <div class="card-title" data-i18n="answer">Answer</div>
-                            <div class="card-content" id="a-text"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="front-deck-list" oncontextmenu="return false;">
-                <div class="deck-item active" id="deck-main" onclick="handleDeckClick(event, 'main')">
-                    <div class="deck-item-left">
-                        <span data-i18n="mainDeck">Main Deck</span>
-                    </div>
-                    <div class="deck-item-right">
-                        <span class="deck-count" id="count-main">0</span>
-                    </div>
-                </div>
-
-                <div class="deck-item sub-deck" id="deck-skipped"
-                     onclick="handleDeckClick(event, 'skipped')"
-                     ontouchstart="startDeckPress(event, 'skipped')"
-                     ontouchend="cancelDeckPress()"
-                     onmousedown="startDeckPress(event, 'skipped')"
-                     onmouseup="cancelDeckPress()"
-                     onmouseleave="cancelDeckPress()">
-                    <div class="deck-item-left">
-                        <span>↳ </span><span data-i18n="skippedDeck">Skipped</span>
-                    </div>
-                    <div class="deck-item-right">
-                        <span class="deck-count" id="count-skipped">0</span>
-                    </div>
-                </div>
-
-                <div class="deck-item sub-deck" id="deck-gotIt"
-                     onclick="handleDeckClick(event, 'gotIt')"
-                     ontouchstart="startDeckPress(event, 'gotIt')"
-                     ontouchend="cancelDeckPress()"
-                     onmousedown="startDeckPress(event, 'gotIt')"
-                     onmouseup="cancelDeckPress()"
-                     onmouseleave="cancelDeckPress()">
-                    <div class="deck-item-left">
-                        <span>↳ </span><span data-i18n="gotItDeck">Got It</span>
-                    </div>
-                    <div class="deck-item-right">
-                        <span class="deck-count" id="count-gotIt">0</span>
-                    </div>
-                </div>
-            </div>
-
+    <header class="app-header">
+      <div class="header-content">
+        <a class="brand" href="./" aria-label="Flipcard Study home" data-i18n-aria="homeLabel">
+          <img src="./icon-v2.png" alt="" width="44" height="44">
+          <span>
+            <strong>Flipcard</strong>
+            <small data-i18n="brandTagline">Remember for longer</small>
+          </span>
+        </a>
+        <div class="header-actions" aria-label="Card tools" data-i18n-aria="cardTools">
+          <button class="icon-button" id="add-card-button" type="button" data-i18n-aria="addCardTitle"><span aria-hidden="true">＋</span></button>
+          <button class="icon-button" id="edit-card-button" type="button" data-i18n-aria="editCardTitle" disabled><span aria-hidden="true">✎</span></button>
+          <button class="icon-button" id="settings-button" type="button" data-i18n-aria="settingsTitle"><span aria-hidden="true">⚙</span></button>
         </div>
-    </div>
+      </div>
+    </header>
 
-    <div class="footer">
-        <div class="meta-controls">
-            <span class="counter" id="deck-indicator" data-i18n="mainDeck">Main Deck</span>
-            <span class="counter" id="card-counter">0 / 0</span>
-            <button class="shuffle-btn" id="shuffle-btn" onclick="toggleShuffle()">🔀</button>
+    <aside class="update-banner" id="update-banner" role="status" hidden>
+      <span data-i18n="updateReady">A new version is ready.</span>
+      <button class="text-button" id="update-button" type="button" data-i18n="updateNow">Update now</button>
+    </aside>
+
+    <section class="stats-strip" aria-label="Study progress" data-i18n-aria="studyProgress">
+      <article class="stat-card stat-due">
+        <span class="stat-icon" aria-hidden="true">◷</span>
+        <span><strong id="stat-due">0</strong><small data-i18n="dueNow">Due now</small></span>
+      </article>
+      <article class="stat-card">
+        <span class="stat-icon" aria-hidden="true">✓</span>
+        <span><strong id="stat-learned">0</strong><small data-i18n="learned">Learned</small></span>
+      </article>
+      <article class="stat-card">
+        <span class="stat-icon" aria-hidden="true">↻</span>
+        <span><strong id="stat-today">0</strong><small data-i18n="reviewsToday">Reviews today</small></span>
+      </article>
+      <article class="stat-card">
+        <span class="stat-icon" aria-hidden="true">◆</span>
+        <span><strong id="stat-streak">0</strong><small data-i18n="dayStreak">Day streak</small></span>
+      </article>
+    </section>
+
+    <main class="app-main" id="main-content">
+      <section class="study-panel" aria-labelledby="study-heading">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow" data-i18n="studySession">Study session</p>
+            <h1 id="study-heading">Main Deck</h1>
+          </div>
+          <div class="study-heading-actions">
+            <div class="mode-switch" aria-label="Study mode" data-i18n-aria="studyMode">
+              <button id="due-mode-button" class="mode-button is-active" type="button" aria-pressed="true" data-i18n="due">Due</button>
+              <button id="all-mode-button" class="mode-button" type="button" aria-pressed="false" data-i18n="allCards">All cards</button>
+              <button id="needs-work-mode-button" class="mode-button" type="button" aria-pressed="false" data-i18n="needsWork">Needs work</button>
+              <button id="known-mode-button" class="mode-button" type="button" aria-pressed="false" data-i18n="gotIt">Got It</button>
+            </div>
+            <button class="focus-mode-button" id="focus-mode-button" type="button" aria-pressed="false" data-i18n-aria="fullScreen" disabled>
+              <span aria-hidden="true">⛶</span><span id="focus-mode-label" data-i18n="fullScreen">Full screen</span>
+            </button>
+          </div>
         </div>
-        <div class="action-row">
-            <button class="btn-action btn-skip" id="btn-skip" onclick="handleSkip()" data-i18n="skip">Skip</button>
-            <button class="btn-action btn-gotit" id="btn-gotit" onclick="handleGotIt()" data-i18n="gotIt">Got It</button>
+
+        <div id="empty-state" class="empty-state">
+          <div class="empty-illustration" id="empty-illustration" aria-hidden="true">✓</div>
+          <h2 id="empty-title" data-i18n="caughtUp">You are caught up</h2>
+          <p id="empty-help" data-i18n="caughtUpHelp">No cards are due in this deck right now.</p>
+          <button class="primary-button" id="empty-action-button" type="button" data-i18n="browseAll">Browse all cards</button>
         </div>
-    </div>
 
-    <!-- Add Modal -->
-    <div class="modal-overlay" id="addModal">
-        <div class="modal">
-            <h2 data-i18n="addCardTitle">Add Card</h2>
-            <div class="form-group">
-                <label data-i18n="questionLabel">Question / Statement</label>
-                <input type="text" id="add-q" data-i18n="qPlaceholder" placeholder="Enter question...">
-                <label data-i18n="answerLabel">Answer</label>
-                <input type="text" id="add-a" data-i18n="aPlaceholder" placeholder="Enter answer...">
-            </div>
-            <div class="modal-actions">
-                <button class="btn-modal btn-cancel" onclick="closeModal('addModal')" data-i18n="cancel">Cancel</button>
-                <button class="btn-modal btn-save" onclick="saveNewCard()" data-i18n="save">Save</button>
-            </div>
+        <button class="card-scene" id="study-card" type="button" aria-pressed="false" hidden>
+          <span class="card" id="flashcard" aria-hidden="true">
+            <span class="card-face card-front">
+              <span class="card-kicker" data-i18n="question">Question</span>
+              <span class="card-content" id="question-text"></span>
+              <span class="card-hint" data-i18n="tapToReveal">Tap to reveal the answer</span>
+            </span>
+            <span class="card-face card-back">
+              <span class="card-kicker" data-i18n="answer">Answer</span>
+              <span class="card-content" id="answer-text"></span>
+              <span class="card-hint" data-i18n="chooseRating">Choose how well you remembered</span>
+            </span>
+          </span>
+        </button>
+
+        <div class="card-meta" id="card-meta" hidden>
+          <span class="status-pill" id="card-status">New</span>
+          <span id="card-schedule">Due now</span>
         </div>
-    </div>
+        <p class="gesture-help" id="gesture-help" data-i18n="gestureHelp" hidden>Tap to flip. Swipe or use Previous and Next to move.</p>
 
-    <!-- Edit Modal -->
-    <div class="modal-overlay" id="editModal">
-        <div class="modal">
-            <h2 data-i18n="editCardTitle">Edit Card</h2>
-            <div class="form-group">
-                <label data-i18n="questionLabel">Question / Statement</label>
-                <input type="text" id="edit-q">
-                <label data-i18n="answerLabel">Answer</label>
-                <input type="text" id="edit-a">
-            </div>
-            <div class="modal-actions">
-                <button class="btn-modal btn-cancel" onclick="closeModal('editModal')" data-i18n="cancel">Cancel</button>
-                <button class="btn-modal btn-save" onclick="saveEditCard()" data-i18n="save">Save</button>
-            </div>
-            <button class="btn-modal btn-delete" onclick="deleteCard()" data-i18n="deleteCard">Delete Card</button>
+        <div class="study-top-controls" aria-label="Card navigation and quick review" data-i18n-aria="quickReviewControls">
+          <div class="navigation-row">
+            <button class="secondary-button compact-button" id="previous-button" type="button" disabled><span aria-hidden="true">←</span><span data-i18n="previous">Previous</span></button>
+            <div class="progress-status" aria-live="polite"><strong id="deck-indicator">Main Deck</strong><span id="card-counter">0 / 0</span></div>
+            <button class="secondary-button compact-button" id="next-button" type="button" disabled><span data-i18n="next">Next</span><span aria-hidden="true">→</span></button>
+            <button class="secondary-button shuffle-button" id="shuffle-button" type="button" disabled><span aria-hidden="true">⇄</span><span data-i18n="shuffle">Shuffle</span></button>
+          </div>
+          <div class="quick-review-row">
+            <button class="quick-review-button quick-skip" id="skip-button" type="button" disabled><strong data-i18n="skip">Skip</strong><small data-i18n="markNeedsWork">Mark needs work</small></button>
+            <button class="quick-review-button quick-got-it" id="got-it-button" type="button" disabled><strong data-i18n="gotIt">Got It</strong><small data-i18n="markKnown">Mark understood</small></button>
+          </div>
         </div>
-    </div>
 
-    <!-- Settings Modal -->
-    <div class="modal-overlay" id="settingsModal">
-        <div class="modal">
-            <h2 data-i18n="settingsTitle">Settings</h2>
-
-            <!-- Storage Status -->
-            <div class="storage-badge">
-                <div class="storage-dot"></div>
-                <span id="storage-info" data-i18n="storageInfo">Data tersimpan di perangkat</span>
-            </div>
-
-            <div class="form-group" style="margin-top: 12px;">
-                <label data-i18n="languageLabel">Language</label>
-                <select id="lang-select" onchange="changeLanguage(this.value)">
-                    <option value="en">English</option>
-                    <option value="id">Bahasa Indonesia</option>
-                    <option value="ja">日本語 (Nihongo)</option>
-                </select>
-            </div>
-
-            <button class="btn-modal btn-export" onclick="exportToCSV()" data-i18n="backupCsv">Backup Active Deck to CSV</button>
-
-            <input type="file" id="import-file" accept=".csv" style="display: none;" onchange="handleImport(event)">
-            <button class="btn-modal btn-import" onclick="document.getElementById('import-file').click()" data-i18n="importCsv">Import Backup CSV</button>
-
-            <button class="btn-modal btn-clear-storage" onclick="clearAllStorage()" data-i18n="clearStorage">🗑 Hapus Semua Data Tersimpan</button>
-
-            <div class="modal-actions" style="margin-top: 15px;">
-                <button class="btn-modal btn-cancel" onclick="closeModal('settingsModal')" data-i18n="close">Close</button>
-            </div>
+        <div class="rating-area normal-rating-area" id="normal-rating-area">
+          <p class="rating-hint" id="rating-hint" data-i18n="revealBeforeRating">Reveal the answer before rating.</p>
+          <div class="rating-row">
+            <button class="rating-button rating-again" type="button" data-rating="again" disabled><strong data-i18n="again">Again</strong><small data-interval="again">10m</small></button>
+            <button class="rating-button rating-hard" type="button" data-rating="hard" disabled><strong data-i18n="hard">Hard</strong><small data-interval="hard">1d</small></button>
+            <button class="rating-button rating-good" type="button" data-rating="good" disabled><strong data-i18n="good">Good</strong><small data-interval="good">1d</small></button>
+            <button class="rating-button rating-easy" type="button" data-rating="easy" disabled><strong data-i18n="easy">Easy</strong><small data-interval="easy">4d</small></button>
+          </div>
         </div>
-    </div>
 
-    <script>
-        // =============================================
-        //  STORAGE KEYS
-        // =============================================
-        const STORAGE_KEY_DECKS        = 'flipcard_decks_v1';
-        const STORAGE_KEY_ACTIVE_DECK  = 'flipcard_activeDeck_v1';
-        const STORAGE_KEY_CURRENT_IDX  = 'flipcard_currentIndex_v1';
-        const STORAGE_KEY_LANG         = 'flipcard_lang';
-
-        // =============================================
-        //  DICTIONARY i18n
-        // =============================================
-        const dict = {
-            en: {
-                question: "Question", answer: "Answer",
-                mainDeck: "Main Deck", skippedDeck: "Skipped", gotItDeck: "Got It",
-                skip: "Skip", gotIt: "Got It",
-                addCardTitle: "Add Card", editCardTitle: "Edit Card", settingsTitle: "Settings",
-                questionLabel: "Question / Statement", answerLabel: "Answer",
-                qPlaceholder: "Enter question...", aPlaceholder: "Enter answer...",
-                cancel: "Cancel", save: "Save", deleteCard: "Delete Card",
-                languageLabel: "Language",
-                backupCsv: "Backup Active Deck to CSV", importCsv: "Import Backup CSV",
-                close: "Close", emptyCard: "No cards available",
-                storageInfo: "✅ Data saved on this device",
-                clearStorage: "🗑 Delete All Saved Data",
-                toastAdded: "Added to Main Deck", toastUpdated: "Card Updated",
-                toastDeleted: "Card Deleted", toastSkipped: "Copied to Skipped",
-                toastGotIt: "Copied to Got It", toastShuffled: "Deck Shuffled",
-                toastReset: "Deck Reset", toastImported: "Cards Imported",
-                toastEmptyBackup: "Deck is empty!", toastSaved: "Saved!",
-                toastStorageCleared: "All data cleared",
-                confirmReset: "Are you sure you want to reset this deck?",
-                confirmClearAll: "Delete ALL saved data? This cannot be undone!"
-            },
-            id: {
-                question: "Pertanyaan", answer: "Jawaban",
-                mainDeck: "Main Deck", skippedDeck: "Skipped", gotItDeck: "Got It",
-                skip: "Skip", gotIt: "Got It",
-                addCardTitle: "Tambah Kartu", editCardTitle: "Edit Kartu", settingsTitle: "Pengaturan",
-                questionLabel: "Pertanyaan / Pernyataan", answerLabel: "Jawaban",
-                qPlaceholder: "Masukkan pertanyaan...", aPlaceholder: "Masukkan jawaban...",
-                cancel: "Batal", save: "Simpan", deleteCard: "Hapus Kartu",
-                languageLabel: "Bahasa",
-                backupCsv: "Backup Deck Aktif ke CSV", importCsv: "Impor Backup CSV",
-                close: "Tutup", emptyCard: "Tidak ada kartu",
-                storageInfo: "✅ Data tersimpan di perangkat ini",
-                clearStorage: "🗑 Hapus Semua Data Tersimpan",
-                toastAdded: "Ditambahkan ke Main Deck", toastUpdated: "Kartu Diperbarui",
-                toastDeleted: "Kartu Dihapus", toastSkipped: "Disalin ke Skipped",
-                toastGotIt: "Disalin ke Got It", toastShuffled: "Deck Diacak",
-                toastReset: "Deck Direset", toastImported: "Kartu Diimpor",
-                toastEmptyBackup: "Deck kosong!", toastSaved: "Tersimpan!",
-                toastStorageCleared: "Semua data dihapus",
-                confirmReset: "Apakah Anda yakin ingin mereset deck ini?",
-                confirmClearAll: "Hapus SEMUA data tersimpan? Tindakan ini tidak bisa dibatalkan!"
-            },
-            ja: {
-                question: "質問", answer: "答え",
-                mainDeck: "メインデッキ", skippedDeck: "スキップ済み", gotItDeck: "習得済み",
-                skip: "スキップ", gotIt: "習得",
-                addCardTitle: "カードを追加", editCardTitle: "カードを編集", settingsTitle: "設定",
-                questionLabel: "質問 / 記述", answerLabel: "答え",
-                qPlaceholder: "質問を入力...", aPlaceholder: "答えを入力...",
-                cancel: "キャンセル", save: "保存", deleteCard: "カードを削除",
-                languageLabel: "言語",
-                backupCsv: "CSVへエクスポート", importCsv: "CSVバックアップをインポート",
-                close: "閉じる", emptyCard: "カードがありません",
-                storageInfo: "✅ このデバイスに保存済み",
-                clearStorage: "🗑 保存データをすべて削除",
-                toastAdded: "メインデッキに追加しました", toastUpdated: "カードを更新しました",
-                toastDeleted: "カードを削除しました", toastSkipped: "スキップ済みにコピーしました",
-                toastGotIt: "習得済みにコピーしました", toastShuffled: "デッキをシャッフルしました",
-                toastReset: "デッキをリセットしました", toastImported: "カードをインポートしました",
-                toastEmptyBackup: "デッキが空です！", toastSaved: "保存しました！",
-                toastStorageCleared: "全データを削除しました",
-                confirmReset: "このデッキをリセットしてもよろしいですか？",
-                confirmClearAll: "保存データをすべて削除しますか？この操作は元に戻せません！"
-            }
-        };
-
-        // =============================================
-        //  STATE — loaded from localStorage on boot
-        // =============================================
-        let decks = { main: [], skipped: [], gotIt: [] };
-        let activeDeck    = 'main';
-        let currentIndex  = 0;
-        let editingId     = null;
-        let currentLang   = localStorage.getItem(STORAGE_KEY_LANG) || 'en';
-
-        // =============================================
-        //  PERSISTENCE HELPERS
-        // =============================================
-
-        /**
-         * Save the entire app state to localStorage.
-         * Called after every mutation that changes decks, activeDeck, or currentIndex.
-         */
-        function saveState() {
-            try {
-                localStorage.setItem(STORAGE_KEY_DECKS,       JSON.stringify(decks));
-                localStorage.setItem(STORAGE_KEY_ACTIVE_DECK, activeDeck);
-                localStorage.setItem(STORAGE_KEY_CURRENT_IDX, String(currentIndex));
-            } catch (e) {
-                // localStorage quota exceeded — notify user
-                console.warn('localStorage save failed:', e);
-            }
-        }
-
-        /**
-         * Load saved state from localStorage.
-         * Returns true if valid data was found, false otherwise.
-         */
-        function loadState() {
-            try {
-                const savedDecks = localStorage.getItem(STORAGE_KEY_DECKS);
-                if (savedDecks) {
-                    const parsed = JSON.parse(savedDecks);
-                    // Validate structure before using
-                    if (parsed && typeof parsed === 'object') {
-                        decks.main    = Array.isArray(parsed.main)    ? parsed.main    : [];
-                        decks.skipped = Array.isArray(parsed.skipped) ? parsed.skipped : [];
-                        decks.gotIt   = Array.isArray(parsed.gotIt)   ? parsed.gotIt   : [];
-                    }
-                }
-                const savedDeck = localStorage.getItem(STORAGE_KEY_ACTIVE_DECK);
-                if (savedDeck && ['main','skipped','gotIt'].includes(savedDeck)) {
-                    activeDeck = savedDeck;
-                }
-                const savedIdx = localStorage.getItem(STORAGE_KEY_CURRENT_IDX);
-                if (savedIdx !== null) {
-                    currentIndex = parseInt(savedIdx, 10) || 0;
-                }
-                return true;
-            } catch (e) {
-                console.warn('localStorage load failed:', e);
-                return false;
-            }
-        }
-
-        /** Clear everything from localStorage (user-triggered). */
-        function clearAllStorage() {
-            if (!confirm(t('confirmClearAll'))) return;
-            localStorage.removeItem(STORAGE_KEY_DECKS);
-            localStorage.removeItem(STORAGE_KEY_ACTIVE_DECK);
-            localStorage.removeItem(STORAGE_KEY_CURRENT_IDX);
-            decks = { main: [], skipped: [], gotIt: [] };
-            activeDeck   = 'main';
-            currentIndex = 0;
-            updateDeckIndicatorText();
-            updateDisplay();
-            document.querySelectorAll('.deck-item').forEach(el => el.classList.remove('active'));
-            document.getElementById('deck-main').classList.add('active');
-            closeModal('settingsModal');
-            showToast('toastStorageCleared');
-        }
-
-        // =============================================
-        //  DOM ELEMENTS
-        // =============================================
-        const flashcard    = document.getElementById('flashcard');
-        const cardScene    = document.getElementById('cardScene');
-        const cardFront    = document.getElementById('card-front');
-        const cardBack     = document.getElementById('card-back');
-        const qText        = document.getElementById('q-text');
-        const aText        = document.getElementById('a-text');
-        const counter      = document.getElementById('card-counter');
-        const deckIndicator= document.getElementById('deck-indicator');
-        const btnSkip      = document.getElementById('btn-skip');
-        const btnGotIt     = document.getElementById('btn-gotit');
-        const shuffleBtn   = document.getElementById('shuffle-btn');
-        const langSelect   = document.getElementById('lang-select');
-
-        // =============================================
-        //  HELPERS
-        // =============================================
-        function generateId() {
-            return Date.now().toString(36) + Math.random().toString(36).substr(2);
-        }
-
-        function showToast(msgKey) {
-            const toast = document.getElementById('toast');
-            toast.innerText = dict[currentLang][msgKey] || msgKey;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 2000);
-        }
-
-        function t(key) {
-            return dict[currentLang][key] || key;
-        }
-
-        // =============================================
-        //  LANGUAGE & i18n
-        // =============================================
-        function applyLanguage() {
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                if (dict[currentLang][key]) {
-                    if (el.tagName === 'INPUT' && el.hasAttribute('placeholder')) {
-                        el.placeholder = dict[currentLang][key];
-                    } else {
-                        el.innerText = dict[currentLang][key];
-                    }
-                }
-            });
-            langSelect.value = currentLang;
-            updateDeckIndicatorText();
-            updateDisplay();
-        }
-
-        function changeLanguage(lang) {
-            currentLang = lang;
-            localStorage.setItem(STORAGE_KEY_LANG, lang);
-            applyLanguage();
-        }
-
-        // =============================================
-        //  DISPLAY LOGIC
-        // =============================================
-        function updateDeckCounts() {
-            document.getElementById('count-main').innerText    = decks.main.length;
-            document.getElementById('count-skipped').innerText = decks.skipped.length;
-            document.getElementById('count-gotIt').innerText   = decks.gotIt.length;
-        }
-
-        function updateDeckIndicatorText() {
-            const mapping = { main: 'mainDeck', skipped: 'skippedDeck', gotIt: 'gotItDeck' };
-            deckIndicator.innerText = t(mapping[activeDeck]);
-        }
-
-        function updateDisplay() {
-            const deck = decks[activeDeck];
-            updateDeckCounts();
-
-            if (deck.length === 0) {
-                cardFront.classList.add('card-empty');
-                cardBack.classList.add('card-empty');
-                qText.innerText = t('emptyCard');
-                aText.innerText = "";
-                cardFront.querySelector('.card-title').style.display = 'none';
-                cardBack.querySelector('.card-title').style.display = 'none';
-                counter.innerText = "0 / 0";
-                btnSkip.disabled  = true;
-                btnGotIt.disabled = true;
-                flashcard.classList.remove('is-flipped');
-                return;
-            }
-
-            if (currentIndex >= deck.length) currentIndex = deck.length - 1;
-            if (currentIndex < 0) currentIndex = 0;
-
-            const card = deck[currentIndex];
-
-            btnSkip.disabled  = false;
-            btnGotIt.disabled = false;
-            cardFront.classList.remove('card-empty');
-            cardBack.classList.remove('card-empty');
-            cardFront.querySelector('.card-title').style.display = 'block';
-            cardBack.querySelector('.card-title').style.display = 'block';
-
-            flashcard.classList.remove('is-flipped');
-
-            setTimeout(() => {
-                qText.innerText    = card.q;
-                aText.innerText    = card.a;
-                counter.innerText  = `${currentIndex + 1} / ${deck.length}`;
-            }, 150);
-        }
-
-        // =============================================
-        //  DECK SWITCHING & LONG PRESS RESET
-        // =============================================
-        let deckPressTimer;
-        let isDeckLongPress = false;
-
-        function startDeckPress(e, deckName) {
-            isDeckLongPress = false;
-            deckPressTimer = setTimeout(() => {
-                isDeckLongPress = true;
-                resetSubDeck(deckName);
-            }, 500);
-        }
-
-        function cancelDeckPress() { clearTimeout(deckPressTimer); }
-
-        function handleDeckClick(e, deckName) {
-            if (isDeckLongPress) { e.preventDefault(); return; }
-            changeDeck(deckName);
-        }
-
-        function changeDeck(deckName) {
-            activeDeck   = deckName;
-            currentIndex = 0;
-            updateDeckIndicatorText();
-            updateDisplay();
-            saveState(); // persist deck switch
-            document.querySelectorAll('.deck-item').forEach(el => el.classList.remove('active'));
-            document.getElementById(`deck-${deckName}`).classList.add('active');
-        }
-
-        function resetSubDeck(deckName) {
-            if (confirm(t('confirmReset'))) {
-                decks[deckName] = [];
-                if (activeDeck === deckName) {
-                    currentIndex = 0;
-                    updateDisplay();
-                } else {
-                    updateDeckCounts();
-                }
-                saveState(); // persist reset
-                showToast('toastReset');
-            }
-        }
-
-        // =============================================
-        //  MODALS
-        // =============================================
-        function openModal(id)  { document.getElementById(id).style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-        // =============================================
-        //  CRUD ACTIONS
-        // =============================================
-        function saveNewCard() {
-            const q = document.getElementById('add-q').value.trim();
-            const a = document.getElementById('add-a').value.trim();
-            if (!q || !a) return;
-
-            decks.main.push({ id: generateId(), q, a });
-            document.getElementById('add-q').value = '';
-            document.getElementById('add-a').value = '';
-
-            if (activeDeck === 'main') {
-                currentIndex = decks.main.length - 1;
-                updateDisplay();
-            } else {
-                updateDeckCounts();
-            }
-            saveState(); // ← persist
-            closeModal('addModal');
-            showToast('toastAdded');
-        }
-
-        function openEditor() {
-            const deck = decks[activeDeck];
-            if (!deck.length) return;
-            const card = deck[currentIndex];
-            editingId = card.id;
-            document.getElementById('edit-q').value = card.q;
-            document.getElementById('edit-a').value = card.a;
-            openModal('editModal');
-        }
-
-        function saveEditCard() {
-            const q = document.getElementById('edit-q').value.trim();
-            const a = document.getElementById('edit-a').value.trim();
-            if (!q || !a) return;
-
-            const card = decks[activeDeck].find(c => c.id === editingId);
-            if (card) { card.q = q; card.a = a; updateDisplay(); showToast('toastUpdated'); }
-            saveState(); // ← persist
-            closeModal('editModal');
-        }
-
-        function deleteCard() {
-            decks[activeDeck] = decks[activeDeck].filter(c => c.id !== editingId);
-            updateDisplay();
-            saveState(); // ← persist
-            closeModal('editModal');
-            showToast('toastDeleted');
-        }
-
-        // =============================================
-        //  DECK CONTROLS
-        // =============================================
-        function handleSkip() {
-            const deck = decks[activeDeck];
-            if (!deck.length) return;
-            const card = deck[currentIndex];
-
-            if (!decks.skipped.some(c => c.id === card.id)) {
-                decks.skipped.push({ ...card });
-            }
-            saveState(); // ← persist
-            showToast('toastSkipped');
-            nextCard();
-        }
-
-        function handleGotIt() {
-            const deck = decks[activeDeck];
-            if (!deck.length) return;
-            const card = deck[currentIndex];
-
-            if (!decks.gotIt.some(c => c.id === card.id)) {
-                decks.gotIt.push({ ...card });
-            }
-            saveState(); // ← persist
-            showToast('toastGotIt');
-            nextCard();
-        }
-
-        function toggleShuffle() {
-            shuffleBtn.classList.toggle('active');
-            const deck = decks[activeDeck];
-            if (deck.length <= 1) return;
-
-            for (let i = deck.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [deck[i], deck[j]] = [deck[j], deck[i]];
-            }
-            currentIndex = 0;
-            updateDisplay();
-            saveState(); // ← persist shuffled order
-
-            if (shuffleBtn.classList.contains('active')) showToast('toastShuffled');
-        }
-
-        function nextCard() {
-            const deck = decks[activeDeck];
-            if (deck.length > 0) {
-                currentIndex = (currentIndex + 1) % deck.length;
-                updateDisplay();
-                saveState(); // ← persist index
-            }
-        }
-
-        function prevCard() {
-            const deck = decks[activeDeck];
-            if (deck.length > 0) {
-                currentIndex = (currentIndex - 1 + deck.length) % deck.length;
-                updateDisplay();
-                saveState(); // ← persist index
-            }
-        }
-
-        // =============================================
-        //  EXPORT / IMPORT CSV
-        // =============================================
-        function exportToCSV() {
-            const deck = decks[activeDeck];
-            if (deck.length === 0) { showToast('toastEmptyBackup'); return; }
-
-            let csvContent = "Question,Answer\n";
-            deck.forEach(card => {
-                let escapedQ = card.q.replace(/"/g, '""');
-                let escapedA = card.a.replace(/"/g, '""');
-                csvContent += `"${escapedQ}","${escapedA}"\n`;
-            });
-
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = `backup_${activeDeck}_deck.csv`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            closeModal('settingsModal');
-        }
-
-        function parseCSVRow(str) {
-            const arr = [];
-            let quote = false, col = '';
-            for (let i = 0; i < str.length; i++) {
-                let cc = str[i], nc = str[i+1];
-                if (cc === '"' && quote && nc === '"') { col += '"'; i++; continue; }
-                if (cc === '"') { quote = !quote; continue; }
-                if (cc === ',' && !quote) { arr.push(col); col = ''; continue; }
-                col += cc;
-            }
-            arr.push(col);
-            return arr;
-        }
-
-        function handleImport(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const text   = e.target.result;
-                const lines  = text.split('\n');
-                const newCards = [];
-
-                for (let i = 1; i < lines.length; i++) {
-                    const line = lines[i].trim();
-                    if (!line) continue;
-                    const cols = parseCSVRow(line);
-                    if (cols.length >= 2) {
-                        newCards.push({ id: generateId(), q: cols[0].trim(), a: cols[1].trim() });
-                    }
-                }
-
-                if (newCards.length > 0) {
-                    decks[activeDeck].push(...newCards);
-                    updateDisplay();
-                    saveState(); // ← persist imported cards
-                    showToast('toastImported');
-                } else {
-                    alert("Invalid or empty CSV format.");
-                }
-                event.target.value = '';
-                closeModal('settingsModal');
-            };
-            reader.readAsText(file);
-        }
-
-        // =============================================
-        //  SWIPE & LONG PRESS (Flashcard)
-        // =============================================
-        let touchstartX = 0, touchstartY = 0;
-        let touchendX   = 0, touchendY   = 0;
-        let pressTimer;
-        let isCardLongPress = false;
-
-        const startCardPress = (e) => {
-            if (decks[activeDeck].length === 0) return;
-            isCardLongPress = false;
-            pressTimer = setTimeout(() => { isCardLongPress = true; openEditor(); }, 500);
-        };
-
-        const cancelCardPress = () => clearTimeout(pressTimer);
-
-        const handleCardSwipe = () => {
-            const thresholdX    = 50;
-            const diffX         = touchendX - touchstartX;
-            const MathAbsDiffX  = Math.abs(diffX);
-            const MathAbsDiffY  = Math.abs(touchendY - touchstartY);
-
-            if (MathAbsDiffX > MathAbsDiffY && MathAbsDiffX > thresholdX) {
-                if (diffX < -thresholdX) nextCard();
-                if (diffX >  thresholdX) prevCard();
-            }
-        };
-
-        cardScene.addEventListener('touchstart', (e) => {
-            touchstartX = e.changedTouches[0].screenX;
-            touchstartY = e.changedTouches[0].screenY;
-            startCardPress(e);
-        }, { passive: true });
-
-        cardScene.addEventListener('touchend', (e) => {
-            touchendX = e.changedTouches[0].screenX;
-            touchendY = e.changedTouches[0].screenY;
-            cancelCardPress();
-            handleCardSwipe();
-        });
-
-        cardScene.addEventListener('touchmove', cancelCardPress, { passive: true });
-
-        cardScene.addEventListener('mousedown', (e) => {
-            touchstartX = e.screenX;
-            touchstartY = e.screenY;
-            startCardPress(e);
-        });
-
-        cardScene.addEventListener('mouseup', (e) => {
-            touchendX = e.screenX;
-            touchendY = e.screenY;
-            cancelCardPress();
-            handleCardSwipe();
-        });
-
-        cardScene.addEventListener('mouseleave', cancelCardPress);
-
-        cardScene.addEventListener('click', (e) => {
-            if (isCardLongPress) { e.preventDefault(); return; }
-            if (decks[activeDeck].length > 0) flashcard.classList.toggle('is-flipped');
-        });
-
-        // =============================================
-        //  INIT APP
-        // =============================================
-        (function init() {
-            // 1. Load persisted state
-            loadState();
-
-            // 2. Sync active deck UI
-            document.querySelectorAll('.deck-item').forEach(el => el.classList.remove('active'));
-            const activeDeckEl = document.getElementById(`deck-${activeDeck}`);
-            if (activeDeckEl) activeDeckEl.classList.add('active');
-
-            // 3. Apply language (also calls updateDisplay)
-            applyLanguage();
-
-            // 4. Register Service Worker for PWA
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('./sw.js')
-                        .then(reg => console.log('Service Worker Registered!', reg))
-                        .catch(err => console.error('Service Worker Registration Failed!', err));
-                });
-            }
-        })();
-    </script>
-</body>
+        <div class="focus-controls" id="focus-controls" aria-label="Full-screen review controls" data-i18n-aria="focusControls">
+          <div class="focus-navigation">
+            <button class="focus-nav-button" id="focus-previous-button" type="button" data-i18n-aria="previous" disabled><span aria-hidden="true">←</span></button>
+            <div class="focus-progress" aria-live="polite"><strong id="focus-deck-indicator">Main Deck</strong><span id="focus-card-counter">0 / 0</span></div>
+            <button class="focus-nav-button" id="focus-next-button" type="button" data-i18n-aria="next" disabled><span aria-hidden="true">→</span></button>
+          </div>
+          <p class="rating-hint" id="focus-rating-hint" data-i18n="revealBeforeRating">Reveal the answer before rating.</p>
+          <div class="rating-row" id="focus-rating-row">
+            <button class="rating-button rating-again" type="button" data-focus-rating="again" disabled><strong data-i18n="again">Again</strong><small data-focus-interval="again">10m</small></button>
+            <button class="rating-button rating-hard" type="button" data-focus-rating="hard" disabled><strong data-i18n="hard">Hard</strong><small data-focus-interval="hard">1d</small></button>
+            <button class="rating-button rating-good" type="button" data-focus-rating="good" disabled><strong data-i18n="good">Good</strong><small data-focus-interval="good">1d</small></button>
+            <button class="rating-button rating-easy" type="button" data-focus-rating="easy" disabled><strong data-i18n="easy">Easy</strong><small data-focus-interval="easy">4d</small></button>
+          </div>
+        </div>
+      </section>
+
+      <aside class="deck-panel" aria-labelledby="deck-heading">
+        <div class="section-heading compact">
+          <div><p class="eyebrow" data-i18n="yourCards">Your cards</p><h2 id="deck-heading" data-i18n="decks">Decks</h2></div>
+          <button class="small-icon-button" id="add-deck-button" type="button" data-i18n-aria="newDeck">＋</button>
+        </div>
+        <nav class="deck-list" id="deck-list" aria-label="Decks" data-i18n-aria="decks"></nav>
+        <p class="deck-hold-hint" data-i18n="holdDeckHint">Press and hold a deck for 250 ms to rename or delete it.</p>
+        <div class="privacy-note"><span aria-hidden="true">●</span><p><strong data-i18n="privateTitle">Private by default</strong><br><span data-i18n="privateHelp">Cards and review history stay in this browser.</span></p></div>
+      </aside>
+    </main>
+
+    <dialog class="modal" id="add-dialog" aria-labelledby="add-dialog-title">
+      <form id="add-form">
+        <div class="modal-heading"><div><p class="eyebrow" data-i18n="newCard">New card</p><h2 id="add-dialog-title" data-i18n="addCardTitle">Add card</h2></div><button class="close-button" type="button" data-close-dialog data-i18n-aria="close">×</button></div>
+        <div class="form-group"><label for="add-deck-select" data-i18n="deckLabel">Deck</label><select id="add-deck-select"></select></div>
+        <div class="form-group"><label for="add-question" data-i18n="questionLabel">Question / Statement</label><textarea id="add-question" rows="3" required maxlength="2000" data-i18n-placeholder="qPlaceholder"></textarea></div>
+        <div class="form-group"><label for="add-answer" data-i18n="answerLabel">Answer</label><textarea id="add-answer" rows="3" required maxlength="4000" data-i18n-placeholder="aPlaceholder"></textarea></div>
+        <div class="modal-actions"><button class="secondary-button" type="button" data-close-dialog data-i18n="cancel">Cancel</button><button class="primary-button" type="submit" data-i18n="save">Save</button></div>
+      </form>
+    </dialog>
+
+    <dialog class="modal" id="edit-dialog" aria-labelledby="edit-dialog-title">
+      <form id="edit-form">
+        <div class="modal-heading"><div><p class="eyebrow" data-i18n="currentCard">Current card</p><h2 id="edit-dialog-title" data-i18n="editCardTitle">Edit card</h2></div><button class="close-button" type="button" data-close-dialog data-i18n-aria="close">×</button></div>
+        <div class="form-group"><label for="edit-question" data-i18n="questionLabel">Question / Statement</label><textarea id="edit-question" rows="3" required maxlength="2000"></textarea></div>
+        <div class="form-group"><label for="edit-answer" data-i18n="answerLabel">Answer</label><textarea id="edit-answer" rows="3" required maxlength="4000"></textarea></div>
+        <div class="modal-actions split-actions"><button class="danger-outline-button" id="delete-card-button" type="button" data-i18n="deleteCard">Delete card</button><span class="action-spacer"></span><button class="secondary-button" type="button" data-close-dialog data-i18n="cancel">Cancel</button><button class="primary-button" type="submit" data-i18n="save">Save</button></div>
+      </form>
+    </dialog>
+
+    <dialog class="modal small-modal" id="deck-dialog" aria-labelledby="deck-dialog-title">
+      <form id="deck-form">
+        <div class="modal-heading"><div><p class="eyebrow" data-i18n="organizeCards">Organize cards</p><h2 id="deck-dialog-title" data-i18n="newDeck">New deck</h2></div><button class="close-button" type="button" data-close-dialog data-i18n-aria="close">×</button></div>
+        <div class="form-group"><label for="deck-name" data-i18n="deckName">Deck name</label><input id="deck-name" type="text" required maxlength="80" data-i18n-placeholder="deckPlaceholder"></div>
+        <div class="modal-actions"><button class="secondary-button" type="button" data-close-dialog data-i18n="cancel">Cancel</button><button class="primary-button" type="submit" data-i18n="createDeck">Create deck</button></div>
+      </form>
+    </dialog>
+
+    <dialog class="modal small-modal" id="rename-dialog" aria-labelledby="rename-dialog-title">
+      <form id="rename-form">
+        <div class="modal-heading"><div><p class="eyebrow" data-i18n="organizeCards">Organize cards</p><h2 id="rename-dialog-title" data-i18n="renameDeck">Rename deck</h2></div><button class="close-button" type="button" data-close-dialog data-i18n-aria="close">×</button></div>
+        <div class="form-group"><label for="rename-deck-name" data-i18n="deckName">Deck name</label><input id="rename-deck-name" type="text" required maxlength="80"></div>
+        <div class="modal-actions"><button class="secondary-button" type="button" data-close-dialog data-i18n="cancel">Cancel</button><button class="primary-button" type="submit" data-i18n="save">Save</button></div>
+      </form>
+    </dialog>
+
+    <dialog class="modal" id="settings-dialog" aria-labelledby="settings-dialog-title">
+      <div class="modal-heading"><div><p class="eyebrow" data-i18n="preferences">Preferences</p><h2 id="settings-dialog-title" data-i18n="settingsTitle">Settings</h2></div><button class="close-button" type="button" data-close-dialog data-i18n-aria="close">×</button></div>
+      <div class="storage-badge" id="storage-badge" role="status"><span class="storage-dot" aria-hidden="true"></span><span id="storage-info" data-i18n="storageInfo">Data saved on this device</span></div>
+      <div class="form-group"><label for="language-select" data-i18n="languageLabel">Language</label><select id="language-select"><option value="en">English</option><option value="id">Bahasa Indonesia</option><option value="ja">日本語</option></select></div>
+      <div class="settings-section" aria-labelledby="backup-heading"><h3 id="backup-heading" data-i18n="backupHeading">Backup and restore</h3><p data-i18n="backupHelp">JSON includes decks, scheduling, and review history.</p><div class="settings-actions"><button class="secondary-button" id="export-csv-button" type="button" data-i18n="backupCsv">Export active deck CSV</button><button class="secondary-button" id="export-json-button" type="button" data-i18n="backupJson">Export complete backup</button><input id="import-file" type="file" accept=".csv,.json,text/csv,application/json" hidden><button class="secondary-button" id="import-button" type="button" data-i18n="importBackup">Import backup</button></div></div>
+      <div class="settings-section danger-zone" aria-labelledby="danger-heading"><h3 id="danger-heading" data-i18n="dangerZone">Danger zone</h3><button class="danger-outline-button" id="clear-storage-button" type="button" data-i18n="clearStorage">Delete all saved data</button></div>
+      <div class="modal-actions"><button class="primary-button" type="button" data-close-dialog data-i18n="done">Done</button></div>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+  </body>
 </html>
