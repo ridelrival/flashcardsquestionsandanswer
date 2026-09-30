@@ -1,66 +1,42 @@
-# Flipcard Study — Phase 2
+# 飲食料品製造業 · 特定技能1号 379問
 
-Flipcard Study is a private, offline-first spaced-repetition flashcard app. The repository root contains the Phase 2 build, while the separate Phase 1 workspace remains unchanged locally.
+Offline-first study PWA based on the 379 master questions in
+`飲食料品製造業_特定技能1号_379問_本試験形式予想問題集.pdf`.
+The five mock exams printed after the master questions are not imported as extra questions.
 
-## Phase 2 features
+## Contents
 
-- A due-review queue that shows only cards scheduled for review.
-- Four review ratings: Again, Hard, Good, and Easy.
-- Quick **Skip** and **Got It** actions that classify cards as needs-work or understood.
-- Dedicated Needs Work and Got It filters, with both counts visible on every deck.
-- Adaptive intervals based on each card's repetitions, lapses, and ease.
-- Live progress for due cards, learned cards, today's reviews, and study streak.
-- User-created decks with create, rename, and delete controls.
-- Due and All Cards modes for each deck.
-- Full-screen study with navigation and all four rating controls below the card.
-- Previous, Next, Shuffle, Skip, and Got It live inside Study Session and remain easy to reach on small screens.
-- Deck Rename and Delete actions stay hidden until the deck is pressed for 250 ms or opened with a context-menu action.
-- Keyboard ratings after revealing an answer: `1` Again, `2` Hard, `3` Good, `4` Easy.
-- Complete Phase 2 JSON backup/restore including review history and scheduling.
-- Active-deck CSV import/export for question and answer content.
-- English, Indonesian, and Japanese interface text.
-- Offline PWA caching and update notification.
+- 379 questions with three choices and one correct answer each
+- 71 image questions using 24 local JPEG assets
+- Seven PDF sections, including practical judgment and planning questions
+- Immediate study feedback, wrong-answer review, unanswered filter, bookmarks, random order, optional choice shuffle
+- 40-question, 70-minute timed exam with 25 food theory, 5 labor theory, 6 food practical, 4 labor practical questions
+- Local exam history, statistics, and JSON export/import
+- IndexedDB state and a service worker that pre-caches every question image
 
-## Phase 1 migration
+No account or cloud database is used. Progress is stored in this browser's IndexedDB and survives app updates. Keep JSON backups before clearing site data or changing devices. The previous flashcard app's `localStorage` keys are left untouched; its card schema does not map to the fixed 379-question bank.
 
-On first launch, Phase 2 looks for the original `flipcard_decks_v1` data if no Phase 2 state exists.
+## Develop and verify
 
-- Main Deck cards become cards in the new Main Deck.
-- Skipped cards are due immediately and start with one lapse.
-- Got It cards are treated as learned once and scheduled three days later.
-- Duplicate card IDs across the old three categories are merged.
-- The original Phase 1 local-storage keys are left intact until the user explicitly selects **Delete all saved data**.
+Node.js 20+ is sufficient. No package dependencies are required.
 
-Phase 2 stores its state in `flipcard_state_v2` and keeps the selected deck, mode, index, and language in separate preference keys.
-
-## Scheduling rules
-
-- **Again** — returns in 10 minutes, resets repetitions, records a lapse, and lowers ease.
-- **Hard** — returns in at least 1 day and grows slowly.
-- **Good** — starts at 1 day, then 3 days, then grows by the card's ease.
-- **Easy** — starts at 4 days and grows faster while raising ease.
-
-This is a transparent local scheduling model, not a medical or scientifically validated guarantee of learning outcomes.
-
-## Run locally
-
-Service workers require an HTTP origin. From this folder, run a static server, for example:
-
-```powershell
-python -m http.server 8080 --bind 127.0.0.1
-```
-
-Then open `http://127.0.0.1:8080/`.
-
-## Verify
-
-Node.js 20 or newer is recommended. No dependency installation is required.
-
-```powershell
-npm test
+```sh
+npm run dev
 npm run check
+npm run build
 ```
 
-## Data and privacy
+`npm run dev` serves the app at `http://127.0.0.1:4173/flashcardsquestionsandanswer/`.
+`npm run build` writes the production-ready static site to `dist/`.
+`scripts/validate-data.mjs` checks IDs, sections, choices, correct indices, images, and orphan assets.
+`scripts/verify-pdf.py` optionally checks all 379 question markers and answer keys against the final PDF using `pypdf`.
 
-Cards, deck names, review schedules, and up to 5,000 recent review-log entries stay in the current browser's local storage. There is no account, analytics, server database, or cloud sync. Download complete JSON backups regularly, especially before clearing browser data or changing devices.
+## GitHub Pages
+
+The repository root is directly deployable as the `main` branch's `/(root)` Pages source. Keep `index.html`, `sw.js`, `questions.json`, and `assets/` together. Alternatively publish the entire `dist/` directory using GitHub Actions. The manifest, service worker scope, scripts, and images all use relative URLs, so they resolve under `/flashcardsquestionsandanswer/`.
+
+The existing `.github/workflows/quality.yml` runs checks on pushes and pull requests. GitHub Pages should be configured in **Settings → Pages → Build and deployment → Deploy from a branch → main → /(root)** if branch deployment is used.
+
+## Data provenance
+
+The `questions.json` data was generated from the structured source used to produce the attached final PDF, then checked against that PDF's 379 master question markers and complete answer key. The referenced illustrations came from the same source figures used in the PDF. The original PDF is not required at runtime.

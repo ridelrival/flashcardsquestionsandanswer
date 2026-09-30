@@ -1,203 +1,38 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#3157d5">
-    <meta name="description" content="A private, offline-first spaced-repetition flashcard app.">
-    <title>Flipcard Study</title>
-    <link rel="manifest" href="./manifest.json">
-    <link rel="icon" type="image/png" href="./icon-v2.png">
-    <link rel="apple-touch-icon" href="./icon-v2.png">
-    <link rel="stylesheet" href="./styles.css">
-    <script type="module" src="./app.js"></script>
-  </head>
-  <body>
-    <a class="skip-link" href="#study-card" data-i18n="skipToCard">Skip to study card</a>
-
-    <header class="app-header">
-      <div class="header-content">
-        <a class="brand" href="./" aria-label="Flipcard Study home" data-i18n-aria="homeLabel">
-          <img src="./icon-v2.png" alt="" width="44" height="44">
-          <span>
-            <strong>Flipcard</strong>
-            <small data-i18n="brandTagline">Remember for longer</small>
-          </span>
-        </a>
-        <div class="header-actions" aria-label="Card tools" data-i18n-aria="cardTools">
-          <button class="icon-button" id="add-card-button" type="button" data-i18n-aria="addCardTitle"><span aria-hidden="true">＋</span></button>
-          <button class="icon-button" id="edit-card-button" type="button" data-i18n-aria="editCardTitle" disabled><span aria-hidden="true">✎</span></button>
-          <button class="icon-button" id="settings-button" type="button" data-i18n-aria="settingsTitle"><span aria-hidden="true">⚙</span></button>
-        </div>
-      </div>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f8f5">
+  <meta name="description" content="飲食料品製造業 特定技能1号の379問をオフラインで学習できるアプリ。">
+  <title>飲食料品製造業 · 379問</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/png" href="./icon-v2.png">
+  <link rel="apple-touch-icon" href="./icon-v2.png">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">本文へ移動</a>
+  <div class="shell">
+    <header class="site-header">
+      <button type="button" class="brand" data-action="home" aria-label="ホームへ">
+        <span class="brand-mark" aria-hidden="true">食</span>
+        <span><strong>飲食料品製造業</strong><small>特定技能1号 · 379問</small></span>
+      </button>
+      <nav class="header-actions" aria-label="メインメニュー">
+        <button type="button" data-action="home">ホーム</button>
+        <button type="button" data-action="open-study">学習</button>
+        <button type="button" data-action="open-exam">模擬試験</button>
+        <button type="button" data-action="settings">設定</button>
+      </nav>
     </header>
-
-    <aside class="update-banner" id="update-banner" role="status" hidden>
-      <span data-i18n="updateReady">A new version is ready.</span>
-      <button class="text-button" id="update-button" type="button" data-i18n="updateNow">Update now</button>
-    </aside>
-
-    <section class="stats-strip" aria-label="Study progress" data-i18n-aria="studyProgress">
-      <article class="stat-card stat-due">
-        <span class="stat-icon" aria-hidden="true">◷</span>
-        <span><strong id="stat-due">0</strong><small data-i18n="dueNow">Due now</small></span>
-      </article>
-      <article class="stat-card">
-        <span class="stat-icon" aria-hidden="true">✓</span>
-        <span><strong id="stat-learned">0</strong><small data-i18n="learned">Learned</small></span>
-      </article>
-      <article class="stat-card">
-        <span class="stat-icon" aria-hidden="true">↻</span>
-        <span><strong id="stat-today">0</strong><small data-i18n="reviewsToday">Reviews today</small></span>
-      </article>
-      <article class="stat-card">
-        <span class="stat-icon" aria-hidden="true">◆</span>
-        <span><strong id="stat-streak">0</strong><small data-i18n="dayStreak">Day streak</small></span>
-      </article>
-    </section>
-
-    <main class="app-main" id="main-content">
-      <section class="study-panel" aria-labelledby="study-heading">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow" data-i18n="studySession">Study session</p>
-            <h1 id="study-heading">Main Deck</h1>
-          </div>
-          <div class="study-heading-actions">
-            <div class="mode-switch" aria-label="Study mode" data-i18n-aria="studyMode">
-              <button id="due-mode-button" class="mode-button is-active" type="button" aria-pressed="true" data-i18n="due">Due</button>
-              <button id="all-mode-button" class="mode-button" type="button" aria-pressed="false" data-i18n="allCards">All cards</button>
-              <button id="needs-work-mode-button" class="mode-button" type="button" aria-pressed="false" data-i18n="needsWork">Needs work</button>
-              <button id="known-mode-button" class="mode-button" type="button" aria-pressed="false" data-i18n="gotIt">Got It</button>
-            </div>
-            <button class="focus-mode-button" id="focus-mode-button" type="button" aria-pressed="false" data-i18n-aria="fullScreen" disabled>
-              <span aria-hidden="true">⛶</span><span id="focus-mode-label" data-i18n="fullScreen">Full screen</span>
-            </button>
-          </div>
-        </div>
-
-        <div id="empty-state" class="empty-state">
-          <div class="empty-illustration" id="empty-illustration" aria-hidden="true">✓</div>
-          <h2 id="empty-title" data-i18n="caughtUp">You are caught up</h2>
-          <p id="empty-help" data-i18n="caughtUpHelp">No cards are due in this deck right now.</p>
-          <button class="primary-button" id="empty-action-button" type="button" data-i18n="browseAll">Browse all cards</button>
-        </div>
-
-        <button class="card-scene" id="study-card" type="button" aria-pressed="false" hidden>
-          <span class="card" id="flashcard" aria-hidden="true">
-            <span class="card-face card-front">
-              <span class="card-kicker" data-i18n="question">Question</span>
-              <span class="card-content" id="question-text"></span>
-              <span class="card-hint" data-i18n="tapToReveal">Tap to reveal the answer</span>
-            </span>
-            <span class="card-face card-back">
-              <span class="card-kicker" data-i18n="answer">Answer</span>
-              <span class="card-content" id="answer-text"></span>
-              <span class="card-hint" data-i18n="chooseRating">Choose how well you remembered</span>
-            </span>
-          </span>
-        </button>
-
-        <div class="card-meta" id="card-meta" hidden>
-          <span class="status-pill" id="card-status">New</span>
-          <span id="card-schedule">Due now</span>
-        </div>
-        <p class="gesture-help" id="gesture-help" data-i18n="gestureHelp" hidden>Tap to flip. Swipe or use Previous and Next to move.</p>
-
-        <div class="study-top-controls" aria-label="Card navigation and quick review" data-i18n-aria="quickReviewControls">
-          <div class="navigation-row">
-            <button class="secondary-button compact-button" id="previous-button" type="button" disabled><span aria-hidden="true">←</span><span data-i18n="previous">Previous</span></button>
-            <div class="progress-status" aria-live="polite"><strong id="deck-indicator">Main Deck</strong><span id="card-counter">0 / 0</span></div>
-            <button class="secondary-button compact-button" id="next-button" type="button" disabled><span data-i18n="next">Next</span><span aria-hidden="true">→</span></button>
-            <button class="secondary-button shuffle-button" id="shuffle-button" type="button" disabled><span aria-hidden="true">⇄</span><span data-i18n="shuffle">Shuffle</span></button>
-          </div>
-          <div class="quick-review-row">
-            <button class="quick-review-button quick-skip" id="skip-button" type="button" disabled><strong data-i18n="skip">Skip</strong><small data-i18n="markNeedsWork">Mark needs work</small></button>
-            <button class="quick-review-button quick-got-it" id="got-it-button" type="button" disabled><strong data-i18n="gotIt">Got It</strong><small data-i18n="markKnown">Mark understood</small></button>
-          </div>
-        </div>
-
-        <div class="rating-area normal-rating-area" id="normal-rating-area">
-          <p class="rating-hint" id="rating-hint" data-i18n="revealBeforeRating">Reveal the answer before rating.</p>
-          <div class="rating-row">
-            <button class="rating-button rating-again" type="button" data-rating="again" disabled><strong data-i18n="again">Again</strong><small data-interval="again">10m</small></button>
-            <button class="rating-button rating-hard" type="button" data-rating="hard" disabled><strong data-i18n="hard">Hard</strong><small data-interval="hard">1d</small></button>
-            <button class="rating-button rating-good" type="button" data-rating="good" disabled><strong data-i18n="good">Good</strong><small data-interval="good">1d</small></button>
-            <button class="rating-button rating-easy" type="button" data-rating="easy" disabled><strong data-i18n="easy">Easy</strong><small data-interval="easy">4d</small></button>
-          </div>
-        </div>
-
-        <div class="focus-controls" id="focus-controls" aria-label="Full-screen review controls" data-i18n-aria="focusControls">
-          <div class="focus-navigation">
-            <button class="focus-nav-button" id="focus-previous-button" type="button" data-i18n-aria="previous" disabled><span aria-hidden="true">←</span></button>
-            <div class="focus-progress" aria-live="polite"><strong id="focus-deck-indicator">Main Deck</strong><span id="focus-card-counter">0 / 0</span></div>
-            <button class="focus-nav-button" id="focus-next-button" type="button" data-i18n-aria="next" disabled><span aria-hidden="true">→</span></button>
-          </div>
-          <p class="rating-hint" id="focus-rating-hint" data-i18n="revealBeforeRating">Reveal the answer before rating.</p>
-          <div class="rating-row" id="focus-rating-row">
-            <button class="rating-button rating-again" type="button" data-focus-rating="again" disabled><strong data-i18n="again">Again</strong><small data-focus-interval="again">10m</small></button>
-            <button class="rating-button rating-hard" type="button" data-focus-rating="hard" disabled><strong data-i18n="hard">Hard</strong><small data-focus-interval="hard">1d</small></button>
-            <button class="rating-button rating-good" type="button" data-focus-rating="good" disabled><strong data-i18n="good">Good</strong><small data-focus-interval="good">1d</small></button>
-            <button class="rating-button rating-easy" type="button" data-focus-rating="easy" disabled><strong data-i18n="easy">Easy</strong><small data-focus-interval="easy">4d</small></button>
-          </div>
-        </div>
-      </section>
-
-      <aside class="deck-panel" aria-labelledby="deck-heading">
-        <div class="section-heading compact">
-          <div><p class="eyebrow" data-i18n="yourCards">Your cards</p><h2 id="deck-heading" data-i18n="decks">Decks</h2></div>
-          <button class="small-icon-button" id="add-deck-button" type="button" data-i18n-aria="newDeck">＋</button>
-        </div>
-        <nav class="deck-list" id="deck-list" aria-label="Decks" data-i18n-aria="decks"></nav>
-        <p class="deck-hold-hint" data-i18n="holdDeckHint">Press and hold a deck for 250 ms to rename or delete it.</p>
-        <div class="privacy-note"><span aria-hidden="true">●</span><p><strong data-i18n="privateTitle">Private by default</strong><br><span data-i18n="privateHelp">Cards and review history stay in this browser.</span></p></div>
-      </aside>
-    </main>
-
-    <dialog class="modal" id="add-dialog" aria-labelledby="add-dialog-title">
-      <form id="add-form">
-        <div class="modal-heading"><div><p class="eyebrow" data-i18n="newCard">New card</p><h2 id="add-dialog-title" data-i18n="addCardTitle">Add card</h2></div><button class="close-button" type="button" data-close-dialog data-i18n-aria="close">×</button></div>
-        <div class="form-group"><label for="add-deck-select" data-i18n="deckLabel">Deck</label><select id="add-deck-select"></select></div>
-        <div class="form-group"><label for="add-question" data-i18n="questionLabel">Question / Statement</label><textarea id="add-question" rows="3" required maxlength="2000" data-i18n-placeholder="qPlaceholder"></textarea></div>
-        <div class="form-group"><label for="add-answer" data-i18n="answerLabel">Answer</label><textarea id="add-answer" rows="3" required maxlength="4000" data-i18n-placeholder="aPlaceholder"></textarea></div>
-        <div class="modal-actions"><button class="secondary-button" type="button" data-close-dialog data-i18n="cancel">Cancel</button><button class="primary-button" type="submit" data-i18n="save">Save</button></div>
-      </form>
-    </dialog>
-
-    <dialog class="modal" id="edit-dialog" aria-labelledby="edit-dialog-title">
-      <form id="edit-form">
-        <div class="modal-heading"><div><p class="eyebrow" data-i18n="currentCard">Current card</p><h2 id="edit-dialog-title" data-i18n="editCardTitle">Edit card</h2></div><button class="close-button" type="button" data-close-dialog data-i18n-aria="close">×</button></div>
-        <div class="form-group"><label for="edit-question" data-i18n="questionLabel">Question / Statement</label><textarea id="edit-question" rows="3" required maxlength="2000"></textarea></div>
-        <div class="form-group"><label for="edit-answer" data-i18n="answerLabel">Answer</label><textarea id="edit-answer" rows="3" required maxlength="4000"></textarea></div>
-        <div class="modal-actions split-actions"><button class="danger-outline-button" id="delete-card-button" type="button" data-i18n="deleteCard">Delete card</button><span class="action-spacer"></span><button class="secondary-button" type="button" data-close-dialog data-i18n="cancel">Cancel</button><button class="primary-button" type="submit" data-i18n="save">Save</button></div>
-      </form>
-    </dialog>
-
-    <dialog class="modal small-modal" id="deck-dialog" aria-labelledby="deck-dialog-title">
-      <form id="deck-form">
-        <div class="modal-heading"><div><p class="eyebrow" data-i18n="organizeCards">Organize cards</p><h2 id="deck-dialog-title" data-i18n="newDeck">New deck</h2></div><button class="close-button" type="button" data-close-dialog data-i18n-aria="close">×</button></div>
-        <div class="form-group"><label for="deck-name" data-i18n="deckName">Deck name</label><input id="deck-name" type="text" required maxlength="80" data-i18n-placeholder="deckPlaceholder"></div>
-        <div class="modal-actions"><button class="secondary-button" type="button" data-close-dialog data-i18n="cancel">Cancel</button><button class="primary-button" type="submit" data-i18n="createDeck">Create deck</button></div>
-      </form>
-    </dialog>
-
-    <dialog class="modal small-modal" id="rename-dialog" aria-labelledby="rename-dialog-title">
-      <form id="rename-form">
-        <div class="modal-heading"><div><p class="eyebrow" data-i18n="organizeCards">Organize cards</p><h2 id="rename-dialog-title" data-i18n="renameDeck">Rename deck</h2></div><button class="close-button" type="button" data-close-dialog data-i18n-aria="close">×</button></div>
-        <div class="form-group"><label for="rename-deck-name" data-i18n="deckName">Deck name</label><input id="rename-deck-name" type="text" required maxlength="80"></div>
-        <div class="modal-actions"><button class="secondary-button" type="button" data-close-dialog data-i18n="cancel">Cancel</button><button class="primary-button" type="submit" data-i18n="save">Save</button></div>
-      </form>
-    </dialog>
-
-    <dialog class="modal" id="settings-dialog" aria-labelledby="settings-dialog-title">
-      <div class="modal-heading"><div><p class="eyebrow" data-i18n="preferences">Preferences</p><h2 id="settings-dialog-title" data-i18n="settingsTitle">Settings</h2></div><button class="close-button" type="button" data-close-dialog data-i18n-aria="close">×</button></div>
-      <div class="storage-badge" id="storage-badge" role="status"><span class="storage-dot" aria-hidden="true"></span><span id="storage-info" data-i18n="storageInfo">Data saved on this device</span></div>
-      <div class="form-group"><label for="language-select" data-i18n="languageLabel">Language</label><select id="language-select"><option value="en">English</option><option value="id">Bahasa Indonesia</option><option value="ja">日本語</option></select></div>
-      <div class="settings-section" aria-labelledby="backup-heading"><h3 id="backup-heading" data-i18n="backupHeading">Backup and restore</h3><p data-i18n="backupHelp">JSON includes decks, scheduling, and review history.</p><div class="settings-actions"><button class="secondary-button" id="export-csv-button" type="button" data-i18n="backupCsv">Export active deck CSV</button><button class="secondary-button" id="export-json-button" type="button" data-i18n="backupJson">Export complete backup</button><input id="import-file" type="file" accept=".csv,.json,text/csv,application/json" hidden><button class="secondary-button" id="import-button" type="button" data-i18n="importBackup">Import backup</button></div></div>
-      <div class="settings-section danger-zone" aria-labelledby="danger-heading"><h3 id="danger-heading" data-i18n="dangerZone">Danger zone</h3><button class="danger-outline-button" id="clear-storage-button" type="button" data-i18n="clearStorage">Delete all saved data</button></div>
-      <div class="modal-actions"><button class="primary-button" type="button" data-close-dialog data-i18n="done">Done</button></div>
-    </dialog>
-
-    <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
-  </body>
+    <main id="main" tabindex="-1"><div id="app">読み込み中…</div></main>
+    <footer class="site-footer">進捗はこの端末のブラウザー内に保存されます。</footer>
+  </div>
+  <dialog id="image-dialog" class="image-dialog" aria-label="図版の拡大表示">
+    <button type="button" id="close-image" class="dialog-close" aria-label="閉じる">×</button>
+    <img id="large-image" alt="">
+  </dialog>
+</body>
 </html>

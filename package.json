@@ -1,10 +1,13 @@
 {
-  "name": "flipcard-study",
-  "version": "6.2.1",
+  "name": "ssw-food-manufacturing-379-quiz",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "validate:data": "node scripts/validate-data.mjs",
     "test": "node --test",
-    "check": "node --check app.js && node --check core.js && node --check sw.js && node --test"
+    "check": "node --check app.js && node --check core.js && node --check storage.js && node --check sw.js && node scripts/validate-data.mjs && node --test",
+    "build": "node scripts/build.mjs"
   }
 }
