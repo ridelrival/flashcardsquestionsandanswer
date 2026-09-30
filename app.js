@@ -1,1318 +1,349 @@
 import {
-  DEFAULT_DECK_ID,
-  RATINGS,
-  createCard,
-  createDeck,
-  createInitialState,
-  createJsonBackup,
-  deckToCsv,
-  getDeckStats,
-  getDueCards,
-  getStudyStats,
-  migrateLegacyDecks,
-  nextIndex,
-  normalizeIndex,
-  normalizeStudyState,
-  parseCsv,
-  parseJsonBackup,
-  previousIndex,
-  recordReview,
-  removeCardById,
-  scheduleCard,
-  shuffleCards,
+  EXAM_MINUTES, SECTION_LABELS, filterQuestions, initialState, normalizeState, orderedChoices,
+  progressStats, recordStudyAnswer, scoreExam, selectExamQuestions, shuffled, validateQuestions,
 } from "./core.js";
+import { loadState, resetState, saveState } from "./storage.js";
 
-const STORAGE = Object.freeze({
-  state: "flipcard_state_v2",
-  activeDeck: "flipcard_activeDeck_v2",
-  currentIndex: "flipcard_currentIndex_v2",
-  studyMode: "flipcard_studyMode_v2",
-  language: "flipcard_lang",
-});
+const root = document.querySelector("#app");
+const dialog = document.querySelector("#image-dialog");
+const imagePreview = document.querySelector("#large-image");
+let questions = [], byId = new Map(), state, view = "home", notice = "";
+let holdQuestion = null, retryId = null, reviewIndex = 0, latestResult = null, autoNextTimer = null;
 
-const LEGACY_STORAGE = Object.freeze({
-  decks: "flipcard_decks_v1",
-  activeDeck: "flipcard_activeDeck_v1",
-  currentIndex: "flipcard_currentIndex_v1",
-});
-
-const translations = {
-  en: {
-    pageTitle: "Flipcard Study",
-    homeLabel: "Flipcard Study home",
-    skipToCard: "Skip to study card",
-    brandTagline: "Remember for longer",
-    cardTools: "Card tools",
-    updateReady: "A new version is ready.",
-    updateNow: "Update now",
-    studyProgress: "Study progress",
-    dueNow: "Due now",
-    learned: "Learned",
-    reviewsToday: "Reviews today",
-    dayStreak: "Day streak",
-    studySession: "Study session",
-    studyMode: "Study mode",
-    due: "Due",
-    allCards: "All cards",
-    needsWork: "Needs work",
-    gotIt: "Got It",
-    fullScreen: "Full screen",
-    exitFullScreen: "Exit full screen",
-    caughtUp: "You are caught up",
-    caughtUpHelp: "No cards are due in this deck right now.",
-    emptyDeck: "This deck is empty",
-    emptyDeckHelp: "Add a question and answer to start learning.",
-    emptyFilter: "No cards in this group",
-    emptyFilterHelp: "Use Skip or Got It while studying to classify cards here.",
-    browseAll: "Browse all cards",
-    addFirstCard: "Add a card",
-    question: "Question",
-    answer: "Answer",
-    tapToReveal: "Tap to reveal the answer",
-    chooseRating: "Choose how well you remembered",
-    gestureHelp: "Tap to flip. Swipe or use Previous and Next to move.",
-    revealAction: "Reveal answer",
-    questionAction: "Return to question",
-    focusControls: "Full-screen review controls",
-    reviewControls: "Review controls",
-    previous: "Previous",
-    next: "Next",
-    shuffle: "Shuffle",
-    quickReviewControls: "Card navigation and quick review",
-    skip: "Skip",
-    markNeedsWork: "Mark needs work",
-    markKnown: "Mark understood",
-    revealBeforeRating: "Reveal the answer before rating.",
-    rateAnswer: "Rate your answer",
-    again: "Again",
-    hard: "Hard",
-    good: "Good",
-    easy: "Easy",
-    yourCards: "Your cards",
-    decks: "Decks",
-    newDeck: "New deck",
-    renameDeck: "Rename",
-    deleteDeck: "Delete",
-    organizeCards: "Organize cards",
-    deckName: "Deck name",
-    deckPlaceholder: "e.g. Biology",
-    createDeck: "Create deck",
-    deckSummary: "{due} due · {total} cards",
-    deckMastery: "✓ {known} Got It · ↺ {needsWork} Skipped",
-    dueShort: "due",
-    holdDeckHint: "Press and hold a deck for 250 ms to rename or delete it.",
-    privateTitle: "Private by default",
-    privateHelp: "Cards and review history stay in this browser.",
-    newCard: "New card",
-    currentCard: "Current card",
-    addCardTitle: "Add card",
-    editCardTitle: "Edit current card",
-    deckLabel: "Deck",
-    questionLabel: "Question / Statement",
-    answerLabel: "Answer",
-    qPlaceholder: "Enter a question or statement…",
-    aPlaceholder: "Enter the answer…",
-    cancel: "Cancel",
-    save: "Save",
-    close: "Close",
-    done: "Done",
-    deleteCard: "Delete card",
-    settingsTitle: "Settings",
-    preferences: "Preferences",
-    storageInfo: "Data saved on this device",
-    storageError: "Saving failed. Export a backup before closing the app.",
-    languageLabel: "Language",
-    backupHeading: "Backup and restore",
-    backupHelp: "JSON includes decks, scheduling, and review history.",
-    backupCsv: "Export active deck CSV",
-    backupJson: "Export complete backup",
-    importBackup: "Import backup",
-    dangerZone: "Danger zone",
-    clearStorage: "Delete all saved data",
-    statusNew: "New",
-    statusNeedsWork: "Needs work",
-    statusGotIt: "Got It",
-    dueInMinutes: "Due in {count} min",
-    dueInHours: "Due in {count} hr",
-    dueInDays: "Due in {count} d",
-    intervalMinutes: "{count}m",
-    intervalDays: "{count}d",
-    toastAdded: "Card added to {deck}",
-    toastUpdated: "Card updated",
-    toastDeleted: "Card deleted",
-    toastShuffled: "Cards shuffled",
-    toastRated: "Rated {rating} · next review {interval}",
-    toastSkipped: "Marked Skipped · review again in 10 minutes",
-    toastGotIt: "Marked Got It · next review scheduled",
-    toastDeckCreated: "Deck created",
-    toastDeckRenamed: "Deck renamed",
-    toastDeckDeleted: "Deck deleted",
-    toastImported: "Imported {count} cards",
-    toastBackupRestored: "Complete Phase 2 backup restored",
-    toastLegacyRestored: "Phase 1 data migrated to Phase 2",
-    toastEmptyBackup: "This deck is empty",
-    toastExported: "Backup downloaded",
-    toastStorageCleared: "All saved data deleted",
-    toastInvalidBackup: "That backup could not be imported",
-    toastSaveFailed: "Changes could not be saved",
-    confirmDelete: "Delete this card? This cannot be undone.",
-    confirmDeleteDeck: "Delete “{deck}” and all {count} cards? This cannot be undone.",
-    confirmClearAll: "Delete every deck, card, review, and preference? This cannot be undone.",
-  },
-  id: {
-    pageTitle: "Flipcard Belajar",
-    homeLabel: "Beranda Flipcard Belajar",
-    skipToCard: "Lewati ke kartu belajar",
-    brandTagline: "Ingat lebih lama",
-    cardTools: "Alat kartu",
-    updateReady: "Versi baru sudah siap.",
-    updateNow: "Perbarui sekarang",
-    studyProgress: "Progres belajar",
-    dueNow: "Jatuh tempo",
-    learned: "Dipelajari",
-    reviewsToday: "Review hari ini",
-    dayStreak: "Hari beruntun",
-    studySession: "Sesi belajar",
-    studyMode: "Mode belajar",
-    due: "Jatuh tempo",
-    allCards: "Semua kartu",
-    needsWork: "Belum paham",
-    gotIt: "Sudah Paham",
-    fullScreen: "Layar penuh",
-    exitFullScreen: "Keluar layar penuh",
-    caughtUp: "Semua sudah selesai",
-    caughtUpHelp: "Belum ada kartu yang perlu direview di deck ini.",
-    emptyDeck: "Deck ini masih kosong",
-    emptyDeckHelp: "Tambahkan pertanyaan dan jawaban untuk mulai belajar.",
-    emptyFilter: "Belum ada kartu di kelompok ini",
-    emptyFilterHelp: "Gunakan Lewati atau Sudah Paham saat belajar untuk mengelompokkan kartu.",
-    browseAll: "Lihat semua kartu",
-    addFirstCard: "Tambah kartu",
-    question: "Pertanyaan",
-    answer: "Jawaban",
-    tapToReveal: "Ketuk untuk melihat jawaban",
-    chooseRating: "Pilih seberapa baik Anda mengingatnya",
-    gestureHelp: "Ketuk untuk membalik. Geser atau gunakan Sebelumnya dan Berikutnya.",
-    revealAction: "Tampilkan jawaban",
-    questionAction: "Kembali ke pertanyaan",
-    focusControls: "Kontrol review layar penuh",
-    reviewControls: "Kontrol review",
-    previous: "Sebelumnya",
-    next: "Berikutnya",
-    shuffle: "Acak",
-    quickReviewControls: "Navigasi kartu dan penilaian cepat",
-    skip: "Lewati",
-    markNeedsWork: "Tandai belum paham",
-    markKnown: "Tandai sudah paham",
-    revealBeforeRating: "Tampilkan jawaban sebelum memberi nilai.",
-    rateAnswer: "Beri nilai jawaban Anda",
-    again: "Ulangi",
-    hard: "Sulit",
-    good: "Baik",
-    easy: "Mudah",
-    yourCards: "Kartu Anda",
-    decks: "Deck",
-    newDeck: "Deck baru",
-    renameDeck: "Ubah nama",
-    deleteDeck: "Hapus",
-    organizeCards: "Atur kartu",
-    deckName: "Nama deck",
-    deckPlaceholder: "contoh: Biologi",
-    createDeck: "Buat deck",
-    deckSummary: "{due} jatuh tempo · {total} kartu",
-    deckMastery: "✓ {known} Sudah Paham · ↺ {needsWork} Dilewati",
-    dueShort: "tempo",
-    holdDeckHint: "Ketuk dan tahan deck selama 250 md untuk mengubah nama atau menghapusnya.",
-    privateTitle: "Privat secara bawaan",
-    privateHelp: "Kartu dan riwayat review tetap di browser ini.",
-    newCard: "Kartu baru",
-    currentCard: "Kartu saat ini",
-    addCardTitle: "Tambah kartu",
-    editCardTitle: "Edit kartu saat ini",
-    deckLabel: "Deck",
-    questionLabel: "Pertanyaan / Pernyataan",
-    answerLabel: "Jawaban",
-    qPlaceholder: "Masukkan pertanyaan atau pernyataan…",
-    aPlaceholder: "Masukkan jawaban…",
-    cancel: "Batal",
-    save: "Simpan",
-    close: "Tutup",
-    done: "Selesai",
-    deleteCard: "Hapus kartu",
-    settingsTitle: "Pengaturan",
-    preferences: "Preferensi",
-    storageInfo: "Data tersimpan di perangkat ini",
-    storageError: "Penyimpanan gagal. Ekspor cadangan sebelum menutup aplikasi.",
-    languageLabel: "Bahasa",
-    backupHeading: "Cadangkan dan pulihkan",
-    backupHelp: "JSON mencakup deck, jadwal, dan riwayat review.",
-    backupCsv: "Ekspor CSV deck aktif",
-    backupJson: "Ekspor cadangan lengkap",
-    importBackup: "Impor cadangan",
-    dangerZone: "Zona berbahaya",
-    clearStorage: "Hapus semua data tersimpan",
-    statusNew: "Baru",
-    statusNeedsWork: "Belum paham",
-    statusGotIt: "Sudah Paham",
-    dueInMinutes: "Tempo dalam {count} mnt",
-    dueInHours: "Tempo dalam {count} jam",
-    dueInDays: "Tempo dalam {count} hari",
-    intervalMinutes: "{count}mnt",
-    intervalDays: "{count}h",
-    toastAdded: "Kartu ditambahkan ke {deck}",
-    toastUpdated: "Kartu diperbarui",
-    toastDeleted: "Kartu dihapus",
-    toastShuffled: "Kartu diacak",
-    toastRated: "Dinilai {rating} · review berikutnya {interval}",
-    toastSkipped: "Ditandai Dilewati · ulangi dalam 10 menit",
-    toastGotIt: "Ditandai Sudah Paham · review berikutnya dijadwalkan",
-    toastDeckCreated: "Deck dibuat",
-    toastDeckRenamed: "Nama deck diperbarui",
-    toastDeckDeleted: "Deck dihapus",
-    toastImported: "{count} kartu diimpor",
-    toastBackupRestored: "Cadangan lengkap Phase 2 dipulihkan",
-    toastLegacyRestored: "Data Phase 1 dimigrasikan ke Phase 2",
-    toastEmptyBackup: "Deck ini kosong",
-    toastExported: "Cadangan diunduh",
-    toastStorageCleared: "Semua data tersimpan dihapus",
-    toastInvalidBackup: "Cadangan tersebut tidak dapat diimpor",
-    toastSaveFailed: "Perubahan tidak dapat disimpan",
-    confirmDelete: "Hapus kartu ini? Tindakan ini tidak dapat dibatalkan.",
-    confirmDeleteDeck: "Hapus “{deck}” dan semua {count} kartu? Tindakan ini tidak dapat dibatalkan.",
-    confirmClearAll: "Hapus semua deck, kartu, review, dan preferensi? Tindakan ini tidak dapat dibatalkan.",
-  },
-  ja: {
-    pageTitle: "Flipcard 学習",
-    homeLabel: "Flipcard 学習ホーム",
-    skipToCard: "学習カードへ移動",
-    brandTagline: "長く覚える",
-    cardTools: "カードツール",
-    updateReady: "新しいバージョンを利用できます。",
-    updateNow: "今すぐ更新",
-    studyProgress: "学習の進捗",
-    dueNow: "復習待ち",
-    learned: "学習済み",
-    reviewsToday: "今日の復習",
-    dayStreak: "連続日数",
-    studySession: "学習セッション",
-    studyMode: "学習モード",
-    due: "復習待ち",
-    allCards: "すべてのカード",
-    needsWork: "要復習",
-    gotIt: "習得済み",
-    fullScreen: "全画面",
-    exitFullScreen: "全画面を終了",
-    caughtUp: "復習は完了です",
-    caughtUpHelp: "このデッキには今復習するカードがありません。",
-    emptyDeck: "このデッキは空です",
-    emptyDeckHelp: "質問と答えを追加して学習を始めましょう。",
-    emptyFilter: "このグループにはカードがありません",
-    emptyFilterHelp: "学習中にスキップまたは習得済みを使って分類できます。",
-    browseAll: "すべてのカードを見る",
-    addFirstCard: "カードを追加",
-    question: "質問",
-    answer: "答え",
-    tapToReveal: "タップして答えを表示",
-    chooseRating: "覚え具合を選択してください",
-    gestureHelp: "タップで反転。スワイプまたは前へ・次へで移動します。",
-    revealAction: "答えを表示",
-    questionAction: "質問に戻る",
-    focusControls: "全画面復習コントロール",
-    reviewControls: "復習コントロール",
-    previous: "前へ",
-    next: "次へ",
-    shuffle: "シャッフル",
-    quickReviewControls: "カード移動とクイック評価",
-    skip: "スキップ",
-    markNeedsWork: "要復習にする",
-    markKnown: "習得済みにする",
-    revealBeforeRating: "評価する前に答えを表示してください。",
-    rateAnswer: "回答を評価",
-    again: "もう一度",
-    hard: "難しい",
-    good: "良い",
-    easy: "簡単",
-    yourCards: "あなたのカード",
-    decks: "デッキ",
-    newDeck: "新しいデッキ",
-    renameDeck: "名前変更",
-    deleteDeck: "削除",
-    organizeCards: "カードを整理",
-    deckName: "デッキ名",
-    deckPlaceholder: "例：生物学",
-    createDeck: "デッキを作成",
-    deckSummary: "復習 {due} · 全 {total}枚",
-    deckMastery: "✓ 習得 {known} · ↺ スキップ {needsWork}",
-    dueShort: "復習",
-    holdDeckHint: "デッキを250ミリ秒長押しすると、名前変更または削除できます。",
-    privateTitle: "初期設定でプライベート",
-    privateHelp: "カードと復習履歴はこのブラウザ内に保存されます。",
-    newCard: "新しいカード",
-    currentCard: "現在のカード",
-    addCardTitle: "カードを追加",
-    editCardTitle: "現在のカードを編集",
-    deckLabel: "デッキ",
-    questionLabel: "質問 / 記述",
-    answerLabel: "答え",
-    qPlaceholder: "質問または記述を入力…",
-    aPlaceholder: "答えを入力…",
-    cancel: "キャンセル",
-    save: "保存",
-    close: "閉じる",
-    done: "完了",
-    deleteCard: "カードを削除",
-    settingsTitle: "設定",
-    preferences: "環境設定",
-    storageInfo: "データはこの端末に保存されています",
-    storageError: "保存できませんでした。アプリを閉じる前にバックアップしてください。",
-    languageLabel: "言語",
-    backupHeading: "バックアップと復元",
-    backupHelp: "JSONにはデッキ、予定、復習履歴が含まれます。",
-    backupCsv: "現在のデッキをCSV出力",
-    backupJson: "完全なバックアップを出力",
-    importBackup: "バックアップを読み込む",
-    dangerZone: "危険な操作",
-    clearStorage: "保存データをすべて削除",
-    statusNew: "新規",
-    statusNeedsWork: "要復習",
-    statusGotIt: "習得済み",
-    dueInMinutes: "{count}分後に復習",
-    dueInHours: "{count}時間後に復習",
-    dueInDays: "{count}日後に復習",
-    intervalMinutes: "{count}分",
-    intervalDays: "{count}日",
-    toastAdded: "{deck}にカードを追加しました",
-    toastUpdated: "カードを更新しました",
-    toastDeleted: "カードを削除しました",
-    toastShuffled: "カードをシャッフルしました",
-    toastRated: "{rating} · 次回 {interval}",
-    toastSkipped: "スキップ済みにしました · 10分後に再復習",
-    toastGotIt: "習得済みにしました · 次回の復習を設定",
-    toastDeckCreated: "デッキを作成しました",
-    toastDeckRenamed: "デッキ名を変更しました",
-    toastDeckDeleted: "デッキを削除しました",
-    toastImported: "{count}枚のカードを読み込みました",
-    toastBackupRestored: "Phase 2バックアップを復元しました",
-    toastLegacyRestored: "Phase 1データをPhase 2へ移行しました",
-    toastEmptyBackup: "このデッキは空です",
-    toastExported: "バックアップをダウンロードしました",
-    toastStorageCleared: "保存データをすべて削除しました",
-    toastInvalidBackup: "バックアップを読み込めませんでした",
-    toastSaveFailed: "変更を保存できませんでした",
-    confirmDelete: "このカードを削除しますか？元に戻せません。",
-    confirmDeleteDeck: "「{deck}」と{count}枚のカードを削除しますか？元に戻せません。",
-    confirmClearAll: "すべてのデッキ、カード、復習、設定を削除しますか？元に戻せません。",
-  },
-};
-
-const elements = {
-  addButton: document.querySelector("#add-card-button"),
-  editButton: document.querySelector("#edit-card-button"),
-  settingsButton: document.querySelector("#settings-button"),
-  stats: {
-    due: document.querySelector("#stat-due"),
-    learned: document.querySelector("#stat-learned"),
-    today: document.querySelector("#stat-today"),
-    streak: document.querySelector("#stat-streak"),
-  },
-  studyHeading: document.querySelector("#study-heading"),
-  dueModeButton: document.querySelector("#due-mode-button"),
-  allModeButton: document.querySelector("#all-mode-button"),
-  needsWorkModeButton: document.querySelector("#needs-work-mode-button"),
-  knownModeButton: document.querySelector("#known-mode-button"),
-  emptyState: document.querySelector("#empty-state"),
-  emptyIllustration: document.querySelector("#empty-illustration"),
-  emptyTitle: document.querySelector("#empty-title"),
-  emptyHelp: document.querySelector("#empty-help"),
-  emptyActionButton: document.querySelector("#empty-action-button"),
-  cardScene: document.querySelector("#study-card"),
-  flashcard: document.querySelector("#flashcard"),
-  questionText: document.querySelector("#question-text"),
-  answerText: document.querySelector("#answer-text"),
-  cardMeta: document.querySelector("#card-meta"),
-  cardStatus: document.querySelector("#card-status"),
-  cardSchedule: document.querySelector("#card-schedule"),
-  gestureHelp: document.querySelector("#gesture-help"),
-  focusModeButton: document.querySelector("#focus-mode-button"),
-  focusModeLabel: document.querySelector("#focus-mode-label"),
-  focusPreviousButton: document.querySelector("#focus-previous-button"),
-  focusNextButton: document.querySelector("#focus-next-button"),
-  focusDeckIndicator: document.querySelector("#focus-deck-indicator"),
-  focusCardCounter: document.querySelector("#focus-card-counter"),
-  focusRatingHint: document.querySelector("#focus-rating-hint"),
-  deckIndicator: document.querySelector("#deck-indicator"),
-  cardCounter: document.querySelector("#card-counter"),
-  previousButton: document.querySelector("#previous-button"),
-  nextButton: document.querySelector("#next-button"),
-  shuffleButton: document.querySelector("#shuffle-button"),
-  skipButton: document.querySelector("#skip-button"),
-  gotItButton: document.querySelector("#got-it-button"),
-  ratingHint: document.querySelector("#rating-hint"),
-  normalRatingArea: document.querySelector("#normal-rating-area"),
-  deckList: document.querySelector("#deck-list"),
-  addDeckButton: document.querySelector("#add-deck-button"),
-  addDialog: document.querySelector("#add-dialog"),
-  addForm: document.querySelector("#add-form"),
-  addDeckSelect: document.querySelector("#add-deck-select"),
-  addQuestion: document.querySelector("#add-question"),
-  addAnswer: document.querySelector("#add-answer"),
-  editDialog: document.querySelector("#edit-dialog"),
-  editForm: document.querySelector("#edit-form"),
-  editQuestion: document.querySelector("#edit-question"),
-  editAnswer: document.querySelector("#edit-answer"),
-  deleteCardButton: document.querySelector("#delete-card-button"),
-  deckDialog: document.querySelector("#deck-dialog"),
-  deckForm: document.querySelector("#deck-form"),
-  deckName: document.querySelector("#deck-name"),
-  renameDialog: document.querySelector("#rename-dialog"),
-  renameForm: document.querySelector("#rename-form"),
-  renameDeckName: document.querySelector("#rename-deck-name"),
-  settingsDialog: document.querySelector("#settings-dialog"),
-  languageSelect: document.querySelector("#language-select"),
-  exportCsvButton: document.querySelector("#export-csv-button"),
-  exportJsonButton: document.querySelector("#export-json-button"),
-  importButton: document.querySelector("#import-button"),
-  importFile: document.querySelector("#import-file"),
-  clearStorageButton: document.querySelector("#clear-storage-button"),
-  storageBadge: document.querySelector("#storage-badge"),
-  storageInfo: document.querySelector("#storage-info"),
-  toast: document.querySelector("#toast"),
-  updateBanner: document.querySelector("#update-banner"),
-  updateButton: document.querySelector("#update-button"),
-  ratingButtons: [...document.querySelectorAll("[data-rating]")],
-  focusRatingButtons: [...document.querySelectorAll("[data-focus-rating]")],
-};
-
-let state = createInitialState();
-let activeDeckId = DEFAULT_DECK_ID;
-let currentIndex = 0;
-let studyMode = "due";
-let currentLanguage = "en";
-let editingId = null;
-let isFlipped = false;
-let isFocusMode = false;
-let toastTimer;
-let waitingWorker = null;
-let pointerStart = null;
-let suppressNextCardClick = false;
-let queueOrder = [];
-let migratedFromLegacy = false;
-let editingDeckId = null;
-let contextDeckId = null;
-let deckHoldTimer = null;
-let deckHoldStart = null;
-let suppressDeckClickUntil = 0;
-
-function t(key, replacements = {}) {
-  const template = translations[currentLanguage]?.[key] ?? translations.en[key] ?? key;
-  return Object.entries(replacements).reduce(
-    (message, [name, value]) => message.replaceAll(`{${name}}`, String(value)),
-    template,
-  );
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 }
-
-function loadState() {
-  const savedLanguage = localStorage.getItem(STORAGE.language);
-  currentLanguage = translations[savedLanguage] ? savedLanguage : "en";
-
-  try {
-    const savedState = localStorage.getItem(STORAGE.state);
-    if (savedState) {
-      state = normalizeStudyState(JSON.parse(savedState));
-    } else {
-      const savedLegacyDecks = localStorage.getItem(LEGACY_STORAGE.decks);
-      state = savedLegacyDecks
-        ? migrateLegacyDecks(JSON.parse(savedLegacyDecks))
-        : createInitialState();
-      migratedFromLegacy = Boolean(savedLegacyDecks);
-    }
-  } catch (error) {
-    console.warn("Saved Flipcard data could not be loaded.", error);
-    state = createInitialState();
-    setStorageStatus(false);
+function rich(value) { return esc(value).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>"); }
+function imageUrl(question) { return question.image ? new URL(question.image, document.baseURI).href : ""; }
+function progress(question) { return state.progress[question.id] || null; }
+function statusClass(question) {
+  const result = progress(question)?.lastResult;
+  return result === "correct" ? "correct" : result === "wrong" ? "wrong" : "";
+}
+function setTheme() { document.documentElement.dataset.theme = state.settings.theme; }
+async function persist() {
+  try { await saveState(state); }
+  catch (error) { notice = "保存に失敗しました。端末の空き容量とブラウザー設定を確認してください。"; console.error(error); }
+}
+async function persistRender() { await persist(); render(); }
+function setNotice(message) { notice = message; render(); }
+function button(action, label, classes = "", attrs = "") {
+  return '<button type="button" class="button ' + classes + '" data-action="' + action + '" ' + attrs + '>' + label + '</button>';
+}
+function imageBlock(question) {
+  if (!question.image) return "";
+  return '<button type="button" class="image-open" data-action="image" data-id="' + question.id + '" aria-label="図版を拡大">'
+    + '<img class="question-image" src="' + esc(imageUrl(question)) + '" alt="問題' + question.id + 'の参考図版" loading="eager"></button>'
+    + '<p class="image-caption">図版をタップすると拡大できます</p>';
+}
+function choicesBlock(question, selected, feedback, locked, exam = false) {
+  const choices = orderedChoices(question, state.settings.shuffleChoices, exam ? state.activeExam.seed : state.settings.choiceSeed);
+  return '<div class="choices" role="radiogroup" aria-label="問題' + question.id + 'の選択肢">'
+    + choices.map(choice => {
+      const chosen = selected === choice.originalIndex;
+      let cls = "";
+      if (feedback) {
+        if (choice.originalIndex === question.correctIndex) cls = "is-correct";
+        else if (chosen) cls = "is-wrong";
+      }
+      return '<button type="button" class="choice ' + cls + '" role="radio" aria-checked="' + chosen + '" '
+        + 'data-action="' + (exam ? "exam-answer" : "answer") + '" data-id="' + question.id + '" data-choice="' + choice.originalIndex + '" '
+        + (locked ? "disabled" : "") + '><span class="radio" aria-hidden="true"></span><span class="choice-text">' + rich(choice.text) + '</span></button>';
+    }).join("") + '</div>';
+}
+function sectionOptions() {
+  return '<option value="all">すべての分野</option>' + SECTION_LABELS.map((name, i) =>
+    '<option value="' + esc(name) + '"' + (state.sectionFilter === name ? " selected" : "") + '>第' + (i + 1) + '部 ' + esc(name.replace(/^第\d部\s*/, "")) + '</option>'
+  ).join("");
+}
+function filterOptions() {
+  return [
+    ["all", "すべて"], ["wrong", "間違えた問題"], ["unanswered", "未回答"],
+    ["bookmarked", "お気に入り"], ["random", "ランダム"],
+  ].map(([value, label]) => '<option value="' + value + '"' + (state.filter === value ? " selected" : "") + '>' + label + '</option>').join("");
+}
+function renderHome() {
+  const stats = progressStats(state);
+  const cards = [
+    ["all", "学習を始める", "379問を順番に学習"],
+    ["wrong", "間違えた問題", stats.everWrong + "問を復習"],
+    ["unanswered", "未回答", stats.unanswered + "問"],
+    ["bookmarked", "お気に入り", stats.bookmarked + "問"],
+  ];
+  return '<p class="eyebrow">SSW FOOD MANUFACTURING</p><h1 class="page-title">飲食料品製造業<br>特定技能1号 · 379問</h1>'
+    + '<p class="lede">本試験形式の3択問題を、いつでもオフラインで。解答履歴はこの端末に自動保存されます。</p>'
+    + '<div class="panel"><div class="progress-track" role="progressbar" aria-valuenow="' + stats.answered + '" aria-valuemin="0" aria-valuemax="379"><div class="progress-fill" style="width:' + (stats.answered / 379 * 100) + '%"></div></div>'
+    + '<div class="progress-caption"><span>学習の進捗</span><strong>' + stats.answered + ' / 379</strong></div></div>'
+    + '<div class="grid dashboard">'
+    + [['回答済み',stats.answered],['未回答',stats.unanswered],['正解',stats.correct],['不正解',stats.wrong],
+       ['正答率',stats.accuracy + '%'],['お気に入り',stats.bookmarked],['間違えたことがある',stats.everWrong],['画像付き',71]]
+      .map(([label,value]) => '<div class="metric"><strong>' + value + '</strong><span>' + label + '</span></div>').join("") + '</div>'
+    + '<div class="grid home-actions">' + cards.map(([filter,title,desc]) =>
+      '<button type="button" class="action-card" data-action="open-filter" data-filter="' + filter + '"><strong>' + title + '</strong><span>' + desc + '</span></button>').join("")
+    + '<button type="button" class="action-card" data-action="open-exam"><strong>本番模擬試験</strong><span>40問 · 70分</span></button>'
+    + '<button type="button" class="action-card" data-action="continue"><strong>続きから再開</strong><span>問題 ' + state.currentQuestionId + ' から</span></button></div>'
+    + renderHistory();
+}
+function renderHistory() {
+  if (!state.examHistory.length) return "";
+  return '<section class="panel history"><h2>模擬試験の履歴</h2>'
+    + [...state.examHistory].reverse().slice(0, 5).map((exam, i) =>
+      '<div class="history-item"><span>' + esc(new Date(exam.finishedAt).toLocaleDateString("ja-JP")) + ' · 試験 #' + (state.examHistory.length - i) + '</span><strong>' + exam.score.correct + ' / 40 (' + exam.score.accuracy + '%)</strong></div>').join("")
+    + '</section>';
+}
+function studyList() {
+  const list = filterQuestions(questions, state);
+  if (holdQuestion && !list.some(q => q.id === holdQuestion)) {
+    const held = byId.get(holdQuestion);
+    if (held) return [held, ...list];
   }
-
-  const savedDeck = localStorage.getItem(STORAGE.activeDeck);
-  activeDeckId = state.decks.some((deck) => deck.id === savedDeck) ? savedDeck : state.decks[0].id;
-  const savedMode = localStorage.getItem(STORAGE.studyMode);
-  studyMode = ["due", "all", "needsWork", "known"].includes(savedMode) ? savedMode : "due";
-  currentIndex = normalizeIndex(
-    Number.parseInt(localStorage.getItem(STORAGE.currentIndex), 10),
-    getVisibleCards().length,
-  );
-
-  if (migratedFromLegacy) saveState();
+  return list;
 }
-
-function saveState() {
-  try {
-    localStorage.setItem(STORAGE.state, JSON.stringify(state));
-    localStorage.setItem(STORAGE.activeDeck, activeDeckId);
-    localStorage.setItem(STORAGE.currentIndex, String(currentIndex));
-    localStorage.setItem(STORAGE.studyMode, studyMode);
-    localStorage.setItem(STORAGE.language, currentLanguage);
-    setStorageStatus(true);
-    return true;
-  } catch (error) {
-    console.warn("Flipcard data could not be saved.", error);
-    setStorageStatus(false);
-    showToast("toastSaveFailed");
-    return false;
-  }
+function renderNavigator() {
+  return '<aside class="panel navigator" aria-label="問題一覧"><details class="navigator-details"' + (window.matchMedia("(min-width:801px)").matches ? " open" : "") + '><summary>問題ナビゲーター · 1–379</summary><p>緑: 正解 · 赤: 不正解 · ★: お気に入り</p>'
+    + '<div class="number-grid">' + questions.map(q =>
+      '<button type="button" data-action="jump" data-id="' + q.id + '" class="' + statusClass(q) + (progress(q)?.bookmarked ? " bookmarked" : "") + (q.id === state.currentQuestionId ? " current" : "") + '" aria-label="問題' + q.id + '">' + q.id + '</button>'
+    ).join("") + '</div></details></aside>';
 }
-
-function setStorageStatus(isHealthy) {
-  elements.storageBadge.classList.toggle("is-error", !isHealthy);
-  elements.storageInfo.textContent = t(isHealthy ? "storageInfo" : "storageError");
+function renderStudy() {
+  const list = studyList();
+  if (!list.length) return '<div class="panel empty"><h1>該当する問題はありません</h1><p>フィルターを変更してください。</p>' + button("clear-filter", "すべての問題へ", "primary") + '</div>';
+  let question = byId.get(state.currentQuestionId);
+  if (!list.some(q => q.id === question?.id)) question = list[0];
+  state.currentQuestionId = question.id;
+  const index = list.findIndex(q => q.id === question.id);
+  const p = progress(question), feedback = p?.lastResult && retryId !== question.id;
+  const selected = retryId === question.id ? null : p?.lastAnswer;
+  const locked = Boolean(feedback);
+  return '<div class="study-layout"><div class="study-main">'
+    + '<div class="study-toolbar"><label class="field">表示する問題<select id="filter-select">' + filterOptions() + '</select></label>'
+    + '<label class="field">分野<select id="section-select">' + sectionOptions() + '</select></label>'
+    + button("reshuffle", "順番を再シャッフル", "small", state.filter === "random" || state.settings.shuffleQuestions ? "" : "hidden")
+    + '</div><article class="panel">'
+    + imageBlock(question)
+    + '<div class="question-meta"><span>' + esc(question.section) + '</span>'
+    + '<button type="button" class="button small" data-action="bookmark" data-id="' + question.id + '" aria-label="お気に入りを切り替える">' + (p?.bookmarked ? "★ 保存済み" : "☆ お気に入り") + '</button></div>'
+    + '<h1 class="question-title">問題 ' + question.id + '<br>' + rich(question.question) + '</h1>'
+    + choicesBlock(question, selected, feedback, locked)
+    + (feedback ? '<div class="feedback ' + p.lastResult + '" role="status">' + (p.lastResult === "correct" ? "正解" : "不正解") + '</div>'
+      + '<p class="explanation">正解: ' + rich(question.choices[question.correctIndex]) + '</p>' : "")
+    + (state.filter === "wrong" && p?.wrongCount > 0 && locked ? button("retry", "もう一度答える", "soft", 'data-id="' + question.id + '"') : "")
+    + '<p class="source">出典: ' + esc(question.source) + ' · ' + esc(question.category) + '</p>'
+    + '<div class="question-footer">' + button("previous", "← 前へ", "", index <= 0 ? "disabled" : "")
+    + '<strong>問題 ' + question.id + ' / 379</strong>'
+    + button("next", "次へ →", "primary", index >= list.length - 1 ? "disabled" : "") + '</div></article></div>'
+    + renderNavigator() + '</div>';
 }
-
-function applyLanguage() {
-  document.documentElement.lang = currentLanguage;
-  document.title = t("pageTitle");
-  document.querySelectorAll("[data-i18n]").forEach((element) => {
-    element.textContent = t(element.dataset.i18n);
-  });
-  document.querySelectorAll("[data-i18n-aria]").forEach((element) => {
-    const label = t(element.dataset.i18nAria);
-    element.setAttribute("aria-label", label);
-    if (element.matches("button")) element.title = label;
-  });
-  document.querySelectorAll("[data-i18n-placeholder]").forEach((element) => {
-    element.placeholder = t(element.dataset.i18nPlaceholder);
-  });
-  elements.languageSelect.value = currentLanguage;
-  setStorageStatus(!elements.storageBadge.classList.contains("is-error"));
+function renderExamLanding() {
+  return '<p class="eyebrow">PRACTICE EXAM</p><h1 class="page-title">本番模擬試験</h1>'
+    + '<div class="panel"><p>379問から40問を選びます。学科30問、実技10問。制限時間は70分です。</p>'
+    + '<p>解答中は正誤を表示しません。提出後に採点と復習ができます。</p>'
+    + button("start-exam", "模擬試験を開始", "primary") + '</div>' + renderHistory();
 }
-
-function getActiveDeck() {
-  return state.decks.find((deck) => deck.id === activeDeckId) ?? state.decks[0];
+function renderExam() {
+  const exam = state.activeExam;
+  if (!exam) return renderExamLanding();
+  const index = Math.max(0, Math.min(39, exam.index || 0)), q = byId.get(exam.questionIds[index]);
+  const selected = Number.isInteger(exam.answers[q.id]) ? exam.answers[q.id] : null;
+  return '<div class="exam-header"><div><p class="eyebrow">本番模擬試験</p><h1 class="page-title">問題 ' + (index + 1) + ' / 40</h1></div><div><span class="timer" id="exam-timer" aria-live="off">' + formatTime(exam.deadline - Date.now()) + '</span><br><small>残り時間</small></div></div>'
+    + '<article class="panel">' + imageBlock(q) + '<p class="question-meta">' + esc(q.section) + ' · マスター問題 ' + q.id + '</p>'
+    + '<h2 class="question-title">' + rich(q.question) + '</h2>' + choicesBlock(q, selected, false, false, true)
+    + '<div class="question-footer">' + button("exam-previous", "← 前へ", "", index === 0 ? "disabled" : "")
+    + '<span>' + Object.keys(exam.answers).length + ' / 40 回答済み</span>'
+    + button("exam-next", "次へ →", "primary", index === 39 ? "disabled" : "") + '</div></article>'
+    + '<div class="exam-nav" aria-label="試験の問題一覧">' + exam.questionIds.map((id, i) =>
+      '<button type="button" data-action="exam-jump" data-index="' + i + '" class="' + (Number.isInteger(exam.answers[id]) ? "answered " : "") + (i === index ? "current" : "") + '" aria-label="試験問題' + (i + 1) + '">' + (i + 1) + '</button>').join("") + '</div>'
+    + '<div class="button-row">' + button("submit-exam", "答案を提出する", "primary") + '</div>';
 }
-
-function getVisibleCards() {
-  const deck = getActiveDeck();
-  let cards;
-  if (studyMode === "due") cards = getDueCards(deck);
-  else if (studyMode === "needsWork") cards = deck.cards.filter((card) => card.mastery === "needsWork");
-  else if (studyMode === "known") cards = deck.cards.filter((card) => card.mastery === "known");
-  else cards = deck.cards.slice();
-  if (queueOrder.length === 0) return cards;
-  const positions = new Map(queueOrder.map((id, index) => [id, index]));
-  return cards.slice().sort((a, b) => {
-    const aPosition = positions.has(a.id) ? positions.get(a.id) : Number.MAX_SAFE_INTEGER;
-    const bPosition = positions.has(b.id) ? positions.get(b.id) : Number.MAX_SAFE_INTEGER;
-    return aPosition - bPosition;
-  });
+function renderResult() {
+  const result = latestResult || state.examHistory.at(-1);
+  if (!result) return renderExamLanding();
+  const score = result.score, item = score.review[reviewIndex] || score.review[0], q = byId.get(item.id);
+  return '<p class="eyebrow">EXAM RESULT</p><h1 class="page-title">模擬試験の結果</h1>'
+    + '<div class="grid dashboard"><div class="metric"><strong>' + score.correct + ' / 40</strong><span>正解数</span></div>'
+    + '<div class="metric"><strong>' + score.wrong + '</strong><span>不正解・未回答</span></div>'
+    + '<div class="metric"><strong>' + score.accuracy + '%</strong><span>正答率</span></div>'
+    + '<div class="metric"><strong>70分</strong><span>制限時間</span></div></div>'
+    + '<div class="button-row" style="margin-bottom:1rem">' + button("open-exam", "新しい試験", "soft") + button("home", "ホームへ") + '</div>'
+    + '<article class="panel">' + imageBlock(q) + '<p class="question-meta">復習 ' + (reviewIndex + 1) + ' / 40 · マスター問題 ' + q.id + '</p>'
+    + '<h2 class="question-title">' + rich(q.question) + '</h2>'
+    + choicesBlock(q, item.answer, true, true)
+    + '<div class="feedback ' + (item.correct ? "correct" : "wrong") + '">' + (item.correct ? "正解" : item.answer === null ? "未回答" : "不正解") + '</div>'
+    + '<p class="explanation">あなたの回答: ' + (item.answer === null ? "未回答" : rich(q.choices[item.answer])) + '</p>'
+    + '<p class="explanation">正解: ' + rich(q.choices[q.correctIndex]) + '</p>'
+    + '<div class="question-footer">' + button("review-previous", "← 前へ", "", reviewIndex === 0 ? "disabled" : "")
+    + button("review-next", "次へ →", "primary", reviewIndex === 39 ? "disabled" : "") + '</div></article>';
 }
-
-function getCurrentCard() {
-  return getVisibleCards()[currentIndex];
+function renderSettings() {
+  const s = state.settings;
+  return '<p class="eyebrow">PREFERENCES</p><h1 class="page-title">設定</h1><div class="panel">'
+    + '<label class="setting-row"><span><strong>テーマ</strong><small>画面の色を選択</small></span><select id="theme-select">'
+    + [["system","システム"],["light","ライト"],["dark","ダーク"]].map(([v,l]) => '<option value="' + v + '"' + (s.theme === v ? " selected" : "") + '>' + l + '</option>').join("") + '</select></label>'
+    + [["shuffleQuestions","問題をシャッフル","問題番号は変わりません"],["shuffleChoices","選択肢をシャッフル","正解の対応は維持されます"],["autoNext","正解後に自動で次へ","初期設定はオフ"]]
+      .map(([key,label,desc]) => '<label class="setting-row"><span><strong>' + label + '</strong><small>' + desc + '</small></span><input type="checkbox" data-setting="' + key + '"' + (s[key] ? " checked" : "") + '></label>').join("")
+    + '</div><div class="panel" style="margin-top:1rem"><h2>学習データ</h2><p>バックアップはJSONファイルで保存できます。インポートすると現在の進捗は置き換わります。</p>'
+    + '<div class="button-row">' + button("export", "進捗をエクスポート") + button("import", "進捗をインポート") + button("reset", "進捗をリセット", "danger") + '</div>'
+    + '<input type="file" id="import-file" accept="application/json,.json" hidden></div>';
 }
-
+function formatTime(ms) {
+  const sec = Math.max(0, Math.ceil(ms / 1000));
+  return String(Math.floor(sec / 60)).padStart(2, "0") + ":" + String(sec % 60).padStart(2, "0");
+}
 function render() {
-  const deck = getActiveDeck();
-  const visibleCards = getVisibleCards();
-  currentIndex = normalizeIndex(currentIndex, visibleCards.length);
-  const card = visibleCards[currentIndex];
-  const hasCard = Boolean(card);
-  const stats = getStudyStats(state);
-
-  if (isFocusMode && !hasCard) setFocusMode(false, false);
-
-  elements.stats.due.textContent = String(stats.due);
-  elements.stats.learned.textContent = String(stats.learned);
-  elements.stats.today.textContent = String(stats.reviewsToday);
-  elements.stats.streak.textContent = String(stats.streak);
-  elements.studyHeading.textContent = deck.name;
-  const modeButtons = {
-    due: elements.dueModeButton,
-    all: elements.allModeButton,
-    needsWork: elements.needsWorkModeButton,
-    known: elements.knownModeButton,
+  if (!state) return;
+  setTheme();
+  root.innerHTML = (notice ? '<div class="notice" role="status">' + esc(notice) + '</div>' : "")
+    + (view === "home" ? renderHome() : view === "study" ? renderStudy() : view === "exam" ? renderExam() : view === "result" ? renderResult() : renderSettings());
+}
+function openStudy(filter = "all") {
+  state.filter = filter; state.sectionFilter = "all"; holdQuestion = null; retryId = null;
+  if (filter === "random" || state.settings.shuffleQuestions) state.randomOrder = shuffled(questions.map(q => q.id));
+  view = "study"; render(); persist();
+}
+function alignCurrentQuestion() {
+  const list = filterQuestions(questions, state);
+  if (list.length && !list.some(q => q.id === state.currentQuestionId)) state.currentQuestionId = list[0].id;
+}
+function navigateStudy(delta) {
+  const list = studyList();
+  const index = list.findIndex(q => q.id === state.currentQuestionId);
+  const target = list[index + delta];
+  if (target) { holdQuestion = null; retryId = null; state.currentQuestionId = target.id; persistRender(); window.scrollTo({ top: 0, behavior: "smooth" }); }
+}
+function startExam() {
+  state.activeExam = {
+    id: Date.now(), questionIds: selectExamQuestions(questions), answers: {}, index: 0,
+    startedAt: new Date().toISOString(), deadline: Date.now() + EXAM_MINUTES * 60000,
+    seed: Math.floor(Math.random() * 2147483647),
   };
-  for (const [mode, button] of Object.entries(modeButtons)) {
-    button.classList.toggle("is-active", studyMode === mode);
-    button.setAttribute("aria-pressed", String(studyMode === mode));
-  }
-
-  elements.emptyState.hidden = hasCard;
-  elements.cardScene.hidden = !hasCard;
-  elements.cardMeta.hidden = !hasCard;
-  elements.gestureHelp.hidden = !hasCard;
-  elements.normalRatingArea.hidden = !hasCard;
-  elements.editButton.disabled = !hasCard;
-  elements.previousButton.disabled = !hasCard || visibleCards.length < 2;
-  elements.nextButton.disabled = !hasCard || visibleCards.length < 2;
-  elements.shuffleButton.disabled = visibleCards.length < 2;
-  elements.skipButton.disabled = !hasCard;
-  elements.gotItButton.disabled = !hasCard;
-  elements.focusModeButton.disabled = !hasCard;
-  elements.focusModeButton.hidden = !hasCard;
-  elements.focusPreviousButton.disabled = !hasCard || visibleCards.length < 2;
-  elements.focusNextButton.disabled = !hasCard || visibleCards.length < 2;
-  isFlipped = false;
-  elements.flashcard.classList.remove("is-flipped");
-  elements.cardScene.setAttribute("aria-pressed", "false");
-
-  if (card) {
-    elements.questionText.textContent = card.q;
-    elements.answerText.textContent = card.a;
-    elements.cardCounter.textContent = `${currentIndex + 1} / ${visibleCards.length}`;
-    elements.focusCardCounter.textContent = `${currentIndex + 1} / ${visibleCards.length}`;
-    elements.cardScene.setAttribute("aria-label", `${t("question")}: ${card.q}. ${t("revealAction")}`);
-    elements.cardStatus.textContent = cardStatusLabel(card);
-    elements.cardSchedule.textContent = dueLabel(card);
-    updateIntervalPreviews(card);
-  } else {
-    elements.questionText.textContent = "";
-    elements.answerText.textContent = "";
-    elements.cardCounter.textContent = "0 / 0";
-    elements.focusCardCounter.textContent = "0 / 0";
-    elements.cardScene.removeAttribute("aria-label");
-    const deckIsEmpty = deck.cards.length === 0;
-    const filterIsEmpty = !deckIsEmpty && studyMode !== "due" && studyMode !== "all";
-    elements.emptyIllustration.textContent = deckIsEmpty ? "?" : "✓";
-    elements.emptyTitle.textContent = t(deckIsEmpty ? "emptyDeck" : filterIsEmpty ? "emptyFilter" : "caughtUp");
-    elements.emptyHelp.textContent = t(deckIsEmpty ? "emptyDeckHelp" : filterIsEmpty ? "emptyFilterHelp" : "caughtUpHelp");
-    elements.emptyActionButton.textContent = t(deckIsEmpty ? "addFirstCard" : "browseAll");
-  }
-
-  elements.deckIndicator.textContent = deck.name;
-  elements.focusDeckIndicator.textContent = deck.name;
-  updateRatingControls();
-  updateFocusModeButton();
-  renderDeckList();
-  renderDeckSelect();
+  view = "exam"; persistRender();
 }
-
-function renderDeckList() {
-  elements.deckList.replaceChildren();
-  for (const deck of state.decks) {
-    const stats = getDeckStats(deck);
-    const row = document.createElement("div");
-    row.className = "deck-row";
-    row.dataset.deckRow = deck.id;
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = `deck-item${deck.id === activeDeckId ? " is-active" : ""}`;
-    button.dataset.deckId = deck.id;
-    button.setAttribute("aria-label", `${deck.name}. ${t("deckSummary", { due: stats.due, total: stats.total })}. ${t("holdDeckHint")}`);
-    if (deck.id === activeDeckId) button.setAttribute("aria-current", "true");
-
-    const copy = document.createElement("span");
-    copy.className = "deck-copy";
-    const name = document.createElement("strong");
-    name.textContent = deck.name;
-    const summary = document.createElement("small");
-    summary.textContent = t("deckSummary", { due: stats.due, total: stats.total });
-    const mastery = document.createElement("small");
-    mastery.className = "deck-mastery";
-    const known = document.createElement("span");
-    known.className = "mastery-known";
-    known.textContent = `✓ ${stats.known}`;
-    const needsWork = document.createElement("span");
-    needsWork.className = "mastery-needs-work";
-    needsWork.textContent = `↺ ${stats.needsWork}`;
-    mastery.append(known, needsWork);
-    copy.append(name, summary, mastery);
-
-    const counts = document.createElement("span");
-    counts.className = "deck-counts";
-    const due = document.createElement("span");
-    due.className = `due-count${stats.due > 0 ? " has-due" : ""}`;
-    due.textContent = String(stats.due);
-    const label = document.createElement("small");
-    label.textContent = t("dueShort");
-    counts.append(due, label);
-    button.append(copy, counts);
-
-    const menu = document.createElement("div");
-    menu.className = "deck-context-menu";
-    menu.dataset.deckMenu = deck.id;
-    menu.hidden = contextDeckId !== deck.id;
-    const renameButton = document.createElement("button");
-    renameButton.type = "button";
-    renameButton.className = "deck-context-button";
-    renameButton.dataset.deckAction = "rename";
-    renameButton.dataset.deckId = deck.id;
-    renameButton.textContent = t("renameDeck");
-    const deleteButton = document.createElement("button");
-    deleteButton.type = "button";
-    deleteButton.className = "deck-context-button danger-text";
-    deleteButton.dataset.deckAction = "delete";
-    deleteButton.dataset.deckId = deck.id;
-    deleteButton.textContent = t("deleteDeck");
-    deleteButton.disabled = state.decks.length <= 1;
-    menu.append(renameButton, deleteButton);
-    row.append(button, menu);
-    elements.deckList.append(row);
-  }
+async function submitExam(force = false) {
+  const exam = state.activeExam;
+  if (!exam) return;
+  const answered = Object.keys(exam.answers).length;
+  if (!force && !confirm("答案を提出しますか？ 回答済み: " + answered + " / 40")) return;
+  const score = scoreExam(exam, byId);
+  latestResult = { ...exam, finishedAt: new Date().toISOString(), score };
+  state.examHistory.push(latestResult);
+  state.examHistory = state.examHistory.slice(-100);
+  state.activeExam = null; reviewIndex = 0; view = "result";
+  await persistRender();
 }
-
-function renderDeckSelect() {
-  const selected = elements.addDeckSelect.value || activeDeckId;
-  elements.addDeckSelect.replaceChildren();
-  for (const deck of state.decks) {
-    const option = document.createElement("option");
-    option.value = deck.id;
-    option.textContent = deck.name;
-    elements.addDeckSelect.append(option);
-  }
-  elements.addDeckSelect.value = state.decks.some((deck) => deck.id === selected) ? selected : activeDeckId;
-}
-
-function setStudyMode(mode) {
-  if (!["due", "all", "needsWork", "known"].includes(mode) || studyMode === mode) return;
-  studyMode = mode;
-  currentIndex = 0;
-  queueOrder = [];
-  saveState();
-  render();
-}
-
-function setFocusMode(enabled, moveFocus = true) {
-  if (enabled && !getCurrentCard()) return;
-  isFocusMode = enabled;
-  document.body.classList.toggle("focus-mode", isFocusMode);
-  updateFocusModeButton();
-  if (!moveFocus) return;
-  if (isFocusMode) elements.cardScene.focus();
-  else elements.focusModeButton.focus();
-}
-
-function updateFocusModeButton() {
-  const label = t(isFocusMode ? "exitFullScreen" : "fullScreen");
-  elements.focusModeButton.setAttribute("aria-pressed", String(isFocusMode));
-  elements.focusModeButton.setAttribute("aria-label", label);
-  elements.focusModeButton.title = label;
-  elements.focusModeLabel.textContent = label;
-}
-
-function flipCard() {
-  const card = getCurrentCard();
-  if (!card) return;
-  isFlipped = !isFlipped;
-  elements.flashcard.classList.toggle("is-flipped", isFlipped);
-  elements.cardScene.setAttribute("aria-pressed", String(isFlipped));
-  elements.cardScene.setAttribute(
-    "aria-label",
-    isFlipped
-      ? `${t("answer")}: ${card.a}. ${t("questionAction")}`
-      : `${t("question")}: ${card.q}. ${t("revealAction")}`,
-  );
-  updateRatingControls();
-}
-
-function updateRatingControls() {
-  const enabled = Boolean(getCurrentCard()) && isFlipped;
-  [...elements.ratingButtons, ...elements.focusRatingButtons].forEach((button) => {
-    button.disabled = !enabled;
-  });
-  elements.ratingHint.textContent = t(enabled ? "rateAnswer" : "revealBeforeRating");
-  elements.focusRatingHint.textContent = t(enabled ? "rateAnswer" : "revealBeforeRating");
-}
-
-function updateIntervalPreviews(card) {
-  for (const rating of RATINGS) {
-    const preview = scheduleCard(card, rating);
-    const label = formatInterval(preview.review.intervalDays, rating);
-    document.querySelectorAll(`[data-interval="${rating}"], [data-focus-interval="${rating}"]`).forEach((element) => {
-      element.textContent = label;
-    });
-  }
-}
-
-function rateCurrentCard(rating) {
-  if (!isFlipped || !RATINGS.includes(rating)) return;
-  const card = getCurrentCard();
-  if (!card) return;
-
-  const preview = scheduleCard(card, rating);
-  state = recordReview(state, activeDeckId, card.id, rating);
-  advanceAfterReview(card.id);
-  saveState();
-  render();
-  showToast("toastRated", {
-    rating: t(rating),
-    interval: formatInterval(preview.review.intervalDays, rating),
-  });
-}
-
-function quickMarkCurrent(rating, toastKey) {
-  const card = getCurrentCard();
-  if (!card || !RATINGS.includes(rating)) return;
-  state = recordReview(state, activeDeckId, card.id, rating);
-  advanceAfterReview(card.id);
-  saveState();
-  render();
-  showToast(toastKey);
-}
-
-function advanceAfterReview(cardId) {
-  queueOrder = queueOrder.filter((id) => id !== cardId);
-  const remainingCards = getVisibleCards();
-  if (remainingCards.some((card) => card.id === cardId)) {
-    currentIndex = nextIndex(currentIndex, remainingCards.length);
-  }
-}
-
-function cardStatusLabel(card) {
-  if (card.mastery === "needsWork") return t("statusNeedsWork");
-  if (card.mastery === "known") return t("statusGotIt");
-  return t("statusNew");
-}
-
-function dueLabel(card) {
-  const difference = Date.parse(card.review.dueAt) - Date.now();
-  if (difference <= 0) return t("dueNow");
-  const minutes = Math.max(1, Math.ceil(difference / 60000));
-  if (minutes < 60) return t("dueInMinutes", { count: minutes });
-  const hours = Math.ceil(minutes / 60);
-  if (hours < 24) return t("dueInHours", { count: hours });
-  return t("dueInDays", { count: Math.ceil(hours / 24) });
-}
-
-function formatInterval(intervalDays, rating) {
-  if (rating === "again" && intervalDays === 0) return t("intervalMinutes", { count: 10 });
-  return t("intervalDays", { count: intervalDays });
-}
-
-function openAddDialog() {
-  renderDeckSelect();
-  elements.addDeckSelect.value = activeDeckId;
-  elements.addDialog.showModal();
-  elements.addQuestion.focus();
-}
-
-function openEditDialog() {
-  const card = getCurrentCard();
-  if (!card) return;
-  editingId = card.id;
-  elements.editQuestion.value = card.q;
-  elements.editAnswer.value = card.a;
-  elements.editDialog.showModal();
-  elements.editQuestion.focus();
-}
-
-function addCard(event) {
-  event.preventDefault();
-  if (!elements.addForm.reportValidity()) return;
-  const deck = state.decks.find((item) => item.id === elements.addDeckSelect.value) ?? getActiveDeck();
-  const card = createCard(elements.addQuestion.value, elements.addAnswer.value);
-  deck.cards.push(card);
-  activeDeckId = deck.id;
-  studyMode = "due";
-  currentIndex = Math.max(0, getDueCards(deck).length - 1);
-  queueOrder = [];
-  elements.addForm.reset();
-  elements.addDialog.close();
-  saveState();
-  render();
-  showToast("toastAdded", { deck: deck.name });
-}
-
-function updateCard(event) {
-  event.preventDefault();
-  if (!elements.editForm.reportValidity()) return;
-  const deck = getActiveDeck();
-  const card = deck.cards.find((item) => item.id === editingId);
-  if (card) {
-    card.q = elements.editQuestion.value.trim();
-    card.a = elements.editAnswer.value.trim();
-    card.updatedAt = new Date().toISOString();
-  }
-  elements.editDialog.close();
-  saveState();
-  render();
-  showToast("toastUpdated");
-}
-
-function deleteCurrentCard() {
-  if (!editingId || !window.confirm(t("confirmDelete"))) return;
-  const deck = getActiveDeck();
-  deck.cards = removeCardById(deck.cards, editingId);
-  state.reviewLog = state.reviewLog.filter((entry) => !(entry.deckId === deck.id && entry.cardId === editingId));
-  queueOrder = queueOrder.filter((id) => id !== editingId);
-  currentIndex = normalizeIndex(currentIndex, getVisibleCards().length);
-  editingId = null;
-  elements.editDialog.close();
-  saveState();
-  render();
-  showToast("toastDeleted");
-}
-
-function createNewDeck(event) {
-  event.preventDefault();
-  if (!elements.deckForm.reportValidity()) return;
-  const deck = createDeck(elements.deckName.value);
-  state.decks.push(deck);
-  activeDeckId = deck.id;
-  studyMode = "due";
-  currentIndex = 0;
-  queueOrder = [];
-  elements.deckForm.reset();
-  elements.deckDialog.close();
-  saveState();
-  render();
-  showToast("toastDeckCreated");
-}
-
-function openRenameDeckDialog(deckId = contextDeckId || activeDeckId) {
-  const deck = state.decks.find((item) => item.id === deckId);
-  if (!deck) return;
-  editingDeckId = deck.id;
-  closeDeckContextMenu();
-  elements.renameDeckName.value = deck.name;
-  elements.renameDialog.showModal();
-  elements.renameDeckName.focus();
-  elements.renameDeckName.select();
-}
-
-function renameDeck(event) {
-  event.preventDefault();
-  if (!elements.renameForm.reportValidity()) return;
-  const deck = state.decks.find((item) => item.id === editingDeckId);
-  if (!deck) return;
-  deck.name = elements.renameDeckName.value.trim().slice(0, 80);
-  editingDeckId = null;
-  elements.renameDialog.close();
-  saveState();
-  render();
-  showToast("toastDeckRenamed");
-}
-
-function deleteDeckById(deckId = contextDeckId || activeDeckId) {
-  if (state.decks.length <= 1) return;
-  const deck = state.decks.find((item) => item.id === deckId);
-  if (!deck) return;
-  closeDeckContextMenu();
-  if (!window.confirm(t("confirmDeleteDeck", { deck: deck.name, count: deck.cards.length }))) return;
-  state.decks = state.decks.filter((item) => item.id !== deck.id);
-  state.reviewLog = state.reviewLog.filter((entry) => entry.deckId !== deck.id);
-  if (activeDeckId === deck.id) {
-    activeDeckId = state.decks[0].id;
-    currentIndex = 0;
-    queueOrder = [];
-    setFocusMode(false, false);
-  }
-  saveState();
-  render();
-  showToast("toastDeckDeleted");
-}
-
-function showDeckContextMenu(deckId) {
-  if (!state.decks.some((deck) => deck.id === deckId)) return;
-  contextDeckId = deckId;
-  suppressDeckClickUntil = Date.now() + 500;
-  renderDeckList();
-  document.querySelector(`[data-deck-menu="${CSS.escape(deckId)}"] [data-deck-action="rename"]`)?.focus();
-}
-
-function closeDeckContextMenu(renderMenu = true) {
-  if (!contextDeckId) return;
-  contextDeckId = null;
-  if (renderMenu) renderDeckList();
-}
-
-function startDeckHold(event, button) {
-  if (!event.isPrimary || event.button !== 0) return;
-  clearTimeout(deckHoldTimer);
-  deckHoldStart = { x: event.clientX, y: event.clientY, deckId: button.dataset.deckId };
-  deckHoldTimer = setTimeout(() => {
-    showDeckContextMenu(button.dataset.deckId);
-    deckHoldTimer = null;
-    deckHoldStart = null;
-  }, 250);
-}
-
-function cancelDeckHold() {
-  clearTimeout(deckHoldTimer);
-  deckHoldTimer = null;
-  deckHoldStart = null;
-}
-
-function changeDeck(deckId) {
-  if (!state.decks.some((deck) => deck.id === deckId)) return;
-  activeDeckId = deckId;
-  currentIndex = 0;
-  queueOrder = [];
-  setFocusMode(false, false);
-  saveState();
-  render();
-}
-
-function goNext() {
-  currentIndex = nextIndex(currentIndex, getVisibleCards().length);
-  saveState();
-  render();
-}
-
-function goPrevious() {
-  currentIndex = previousIndex(currentIndex, getVisibleCards().length);
-  saveState();
-  render();
-}
-
-function shuffleCurrentQueue() {
-  const cards = getVisibleCards();
-  if (cards.length < 2) return;
-  queueOrder = shuffleCards(cards).map((card) => card.id);
-  currentIndex = 0;
-  saveState();
-  render();
-  showToast("toastShuffled");
-}
-
-function handleEmptyAction() {
-  if (getActiveDeck().cards.length === 0) openAddDialog();
-  else setStudyMode("all");
-}
-
-function exportActiveDeckCsv() {
-  const deck = getActiveDeck();
-  if (deck.cards.length === 0) {
-    showToast("toastEmptyBackup");
-    return;
-  }
-  downloadText(`flipcard-${safeFilename(deck.name)}.csv`, deckToCsv(deck.cards), "text/csv;charset=utf-8");
-  showToast("toastExported");
-}
-
-function exportCompleteBackup() {
-  downloadText(
-    `flipcard-phase2-${new Date().toISOString().slice(0, 10)}.json`,
-    createJsonBackup(state, currentLanguage, activeDeckId),
-    "application/json;charset=utf-8",
-  );
-  showToast("toastExported");
-}
-
-async function importBackup(event) {
-  const file = event.target.files?.[0];
-  if (!file) return;
-  try {
-    const text = await file.text();
-    if (file.name.toLowerCase().endsWith(".json")) {
-      const backup = parseJsonBackup(text);
-      state = backup.state;
-      currentLanguage = backup.language;
-      activeDeckId = backup.activeDeckId;
-      studyMode = "due";
-      currentIndex = 0;
-      queueOrder = [];
-      applyLanguage();
-      saveState();
-      render();
-      showToast("toastBackupRestored");
-    } else {
-      const cards = parseCsv(text);
-      if (cards.length === 0) throw new Error("No valid cards found.");
-      getActiveDeck().cards.push(...cards);
-      studyMode = "due";
-      queueOrder = [];
-      saveState();
-      render();
-      showToast("toastImported", { count: cards.length });
-    }
-    elements.settingsDialog.close();
-  } catch (error) {
-    console.warn("Backup import failed.", error);
-    showToast("toastInvalidBackup");
-  } finally {
-    event.target.value = "";
-  }
-}
-
-function clearAllData() {
-  if (!window.confirm(t("confirmClearAll"))) return;
-  for (const key of [...Object.values(STORAGE), ...Object.values(LEGACY_STORAGE)]) localStorage.removeItem(key);
-  state = createInitialState();
-  activeDeckId = DEFAULT_DECK_ID;
-  currentIndex = 0;
-  studyMode = "due";
-  currentLanguage = "en";
-  queueOrder = [];
-  setFocusMode(false, false);
-  applyLanguage();
-  render();
-  elements.settingsDialog.close();
-  showToast("toastStorageCleared");
-}
-
-function downloadText(filename, content, type) {
-  const url = URL.createObjectURL(new Blob([content], { type }));
+function exportProgress() {
+  const payload = { version: 1, questionDataVersion: 1, exportedAt: new Date().toISOString(), state };
+  const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
   const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.append(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 0);
+  link.href = url; link.download = "ssw-food-quiz-progress.json"; link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-
-function safeFilename(value) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "deck";
-}
-
-function showToast(key, replacements = {}) {
-  clearTimeout(toastTimer);
-  elements.toast.textContent = t(key, replacements);
-  elements.toast.classList.add("is-visible");
-  toastTimer = setTimeout(() => elements.toast.classList.remove("is-visible"), 2600);
-}
-
-function bindEvents() {
-  elements.addButton.addEventListener("click", openAddDialog);
-  elements.editButton.addEventListener("click", openEditDialog);
-  elements.settingsButton.addEventListener("click", () => elements.settingsDialog.showModal());
-  elements.dueModeButton.addEventListener("click", () => setStudyMode("due"));
-  elements.allModeButton.addEventListener("click", () => setStudyMode("all"));
-  elements.needsWorkModeButton.addEventListener("click", () => setStudyMode("needsWork"));
-  elements.knownModeButton.addEventListener("click", () => setStudyMode("known"));
-  elements.emptyActionButton.addEventListener("click", handleEmptyAction);
-  elements.focusModeButton.addEventListener("click", () => setFocusMode(!isFocusMode));
-  elements.previousButton.addEventListener("click", goPrevious);
-  elements.nextButton.addEventListener("click", goNext);
-  elements.shuffleButton.addEventListener("click", shuffleCurrentQueue);
-  elements.skipButton.addEventListener("click", () => quickMarkCurrent("again", "toastSkipped"));
-  elements.gotItButton.addEventListener("click", () => quickMarkCurrent("good", "toastGotIt"));
-  elements.focusPreviousButton.addEventListener("click", goPrevious);
-  elements.focusNextButton.addEventListener("click", goNext);
-  elements.addForm.addEventListener("submit", addCard);
-  elements.editForm.addEventListener("submit", updateCard);
-  elements.deleteCardButton.addEventListener("click", deleteCurrentCard);
-  elements.addDeckButton.addEventListener("click", () => {
-    elements.deckDialog.showModal();
-    elements.deckName.focus();
-  });
-  elements.deckForm.addEventListener("submit", createNewDeck);
-  elements.renameForm.addEventListener("submit", renameDeck);
-  elements.exportCsvButton.addEventListener("click", exportActiveDeckCsv);
-  elements.exportJsonButton.addEventListener("click", exportCompleteBackup);
-  elements.importButton.addEventListener("click", () => elements.importFile.click());
-  elements.importFile.addEventListener("change", importBackup);
-  elements.clearStorageButton.addEventListener("click", clearAllData);
-  elements.languageSelect.addEventListener("change", (event) => {
-    currentLanguage = translations[event.target.value] ? event.target.value : "en";
-    applyLanguage();
-    saveState();
-    render();
-  });
-
-  elements.ratingButtons.forEach((button) => {
-    button.addEventListener("click", () => rateCurrentCard(button.dataset.rating));
-  });
-  elements.focusRatingButtons.forEach((button) => {
-    button.addEventListener("click", () => rateCurrentCard(button.dataset.focusRating));
-  });
-  document.querySelectorAll("[data-close-dialog]").forEach((button) => {
-    button.addEventListener("click", () => button.closest("dialog").close());
-  });
-  elements.deckList.addEventListener("click", (event) => {
-    const actionButton = event.target.closest("[data-deck-action]");
-    if (actionButton) {
-      event.stopPropagation();
-      if (actionButton.dataset.deckAction === "rename") openRenameDeckDialog(actionButton.dataset.deckId);
-      else deleteDeckById(actionButton.dataset.deckId);
-      return;
-    }
-    const button = event.target.closest("[data-deck-id]");
-    if (!button || Date.now() < suppressDeckClickUntil) return;
-    closeDeckContextMenu(false);
-    changeDeck(button.dataset.deckId);
-  });
-  elements.deckList.addEventListener("pointerdown", (event) => {
-    const button = event.target.closest(".deck-item");
-    if (button) startDeckHold(event, button);
-  });
-  elements.deckList.addEventListener("pointermove", (event) => {
-    if (!deckHoldStart) return;
-    if (Math.hypot(event.clientX - deckHoldStart.x, event.clientY - deckHoldStart.y) > 8) cancelDeckHold();
-  });
-  elements.deckList.addEventListener("pointerup", cancelDeckHold);
-  elements.deckList.addEventListener("pointercancel", cancelDeckHold);
-  elements.deckList.addEventListener("contextmenu", (event) => {
-    const button = event.target.closest(".deck-item");
-    if (!button) return;
-    event.preventDefault();
-    cancelDeckHold();
-    showDeckContextMenu(button.dataset.deckId);
-  });
-  document.addEventListener("click", (event) => {
-    if (contextDeckId && !event.target.closest(".deck-row")) closeDeckContextMenu();
-  });
-
-  elements.cardScene.addEventListener("pointerdown", (event) => {
-    if (event.isPrimary) pointerStart = { x: event.clientX, y: event.clientY };
-  });
-  elements.cardScene.addEventListener("pointerup", (event) => {
-    if (!pointerStart || !event.isPrimary) return;
-    const horizontal = event.clientX - pointerStart.x;
-    const vertical = event.clientY - pointerStart.y;
-    pointerStart = null;
-    if (Math.abs(horizontal) > 55 && Math.abs(horizontal) > Math.abs(vertical)) {
-      suppressNextCardClick = true;
-      if (horizontal < 0) goNext();
-      else goPrevious();
-    }
-  });
-  elements.cardScene.addEventListener("pointercancel", () => {
-    pointerStart = null;
-  });
-  elements.cardScene.addEventListener("click", () => {
-    if (suppressNextCardClick) {
-      suppressNextCardClick = false;
-      return;
-    }
-    flipCard();
-  });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && isFocusMode && !document.querySelector("dialog[open]")) {
-      setFocusMode(false);
-      return;
-    }
-    if (document.querySelector("dialog[open]") || /INPUT|TEXTAREA|SELECT/.test(event.target.tagName)) return;
-    if (event.key === "ArrowLeft") {
-      event.preventDefault();
-      goPrevious();
-    } else if (event.key === "ArrowRight") {
-      event.preventDefault();
-      goNext();
-    } else if (isFlipped && ["1", "2", "3", "4"].includes(event.key)) {
-      event.preventDefault();
-      rateCurrentCard(RATINGS[Number(event.key) - 1]);
-    }
-  });
-}
-
-async function registerServiceWorker() {
-  if (!("serviceWorker" in navigator)) return;
+async function importProgress(file) {
   try {
-    const registration = await navigator.serviceWorker.register("./sw.js");
-    if (registration.waiting && navigator.serviceWorker.controller) showUpdate(registration.waiting);
-    registration.addEventListener("updatefound", () => {
-      const installingWorker = registration.installing;
-      if (!installingWorker) return;
-      installingWorker.addEventListener("statechange", () => {
-        if (installingWorker.state === "installed" && navigator.serviceWorker.controller) showUpdate(installingWorker);
-      });
-    });
-    navigator.serviceWorker.addEventListener("controllerchange", () => window.location.reload());
+    const payload = JSON.parse(await file.text());
+    if (payload.version !== 1 || !payload.state || typeof payload.state !== "object") throw new Error("Unsupported backup format");
+    if (!confirm("現在の進捗をバックアップのデータで置き換えますか？")) return;
+    state = normalizeState(payload.state); holdQuestion = null; retryId = null; latestResult = null;
+    await persist(); notice = "進捗をインポートしました。"; view = "home"; render();
+  } catch (error) { setNotice("インポートできませんでした。JSON形式を確認してください。"); console.error(error); }
+}
+
+document.addEventListener("click", async event => {
+  const target = event.target.closest("[data-action]");
+  if (!target || !state) return;
+  const action = target.dataset.action, id = Number(target.dataset.id);
+  if (autoNextTimer) { clearTimeout(autoNextTimer); autoNextTimer = null; }
+  if (action === "home") { view = "home"; render(); }
+  else if (action === "settings") { view = "settings"; render(); }
+  else if (action === "open-study") openStudy("all");
+  else if (action === "open-filter") openStudy(target.dataset.filter);
+  else if (action === "continue") { state.filter = "all"; state.sectionFilter = "all"; holdQuestion = null; view = "study"; render(); }
+  else if (action === "clear-filter") openStudy("all");
+  else if (action === "open-exam") { view = "exam"; render(); }
+  else if (action === "start-exam") startExam();
+  else if (action === "image") { const q = byId.get(id); imagePreview.src = imageUrl(q); imagePreview.alt = "問題" + id + "の参考図版"; dialog.showModal(); }
+  else if (action === "bookmark") {
+    const p = progress(byId.get(id)) || { attemptCount: 0, correctCount: 0, wrongCount: 0, lastAnswer: null, lastResult: null, bookmarked: false };
+    p.bookmarked = !p.bookmarked; state.progress[id] = p; await persistRender();
+  }
+  else if (action === "answer") {
+    const q = byId.get(id), choice = Number(target.dataset.choice);
+    if (recordStudyAnswer(state, q, choice, retryId === id)) {
+      holdQuestion = id; retryId = null; await persistRender();
+      if (state.settings.autoNext && choice === q.correctIndex) autoNextTimer = setTimeout(() => navigateStudy(1), 1800);
+    }
+  }
+  else if (action === "retry") { retryId = id; render(); }
+  else if (action === "previous") navigateStudy(-1);
+  else if (action === "next") navigateStudy(1);
+  else if (action === "jump") {
+    state.filter = "all"; state.sectionFilter = "all"; holdQuestion = null; retryId = null;
+    state.currentQuestionId = id; view = "study"; await persistRender(); window.scrollTo(0, 0);
+  }
+  else if (action === "reshuffle") { state.randomOrder = shuffled(questions.map(q => q.id)); await persistRender(); }
+  else if (action === "exam-answer") {
+    if (!state.activeExam) return;
+    state.activeExam.answers[id] = Number(target.dataset.choice); await persistRender();
+  }
+  else if (action === "exam-previous" || action === "exam-next") {
+    state.activeExam.index = Math.max(0, Math.min(39, state.activeExam.index + (action === "exam-next" ? 1 : -1))); await persistRender();
+  }
+  else if (action === "exam-jump") { state.activeExam.index = Number(target.dataset.index); await persistRender(); }
+  else if (action === "submit-exam") await submitExam();
+  else if (action === "review-previous" || action === "review-next") { reviewIndex += action === "review-next" ? 1 : -1; reviewIndex = Math.max(0, Math.min(39, reviewIndex)); render(); }
+  else if (action === "export") exportProgress();
+  else if (action === "import") document.querySelector("#import-file").click();
+  else if (action === "reset") {
+    if (!confirm("本当にすべての学習データを削除しますか？")) return;
+    await resetState(); state = initialState(); latestResult = null; view = "home"; notice = "学習データを削除しました。"; render();
+  }
+});
+document.addEventListener("change", async event => {
+  if (!state) return;
+  const target = event.target;
+  if (target.id === "filter-select") {
+    state.filter = target.value; holdQuestion = null; retryId = null;
+    if (target.value === "random") state.randomOrder = shuffled(questions.map(q => q.id));
+    alignCurrentQuestion();
+    await persistRender();
+  } else if (target.id === "section-select") {
+    state.sectionFilter = target.value; holdQuestion = null; retryId = null; alignCurrentQuestion(); await persistRender();
+  } else if (target.id === "theme-select") {
+    state.settings.theme = target.value; await persistRender();
+  } else if (target.dataset.setting) {
+    state.settings[target.dataset.setting] = target.checked;
+    if (target.dataset.setting === "shuffleQuestions" && target.checked) state.randomOrder = shuffled(questions.map(q => q.id));
+    await persistRender();
+  } else if (target.id === "import-file" && target.files?.[0]) await importProgress(target.files[0]);
+});
+document.querySelector("#close-image").addEventListener("click", () => dialog.close());
+dialog.addEventListener("click", event => { if (event.target === dialog) dialog.close(); });
+document.addEventListener("keydown", event => {
+  if (view !== "study" && view !== "exam") return;
+  if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
+  if (event.key === "ArrowRight") { event.preventDefault(); if (view === "study") navigateStudy(1); else if (state.activeExam) { state.activeExam.index = Math.min(39, state.activeExam.index + 1); persistRender(); } }
+  if (event.key === "ArrowLeft") { event.preventDefault(); if (view === "study") navigateStudy(-1); else if (state.activeExam) { state.activeExam.index = Math.max(0, state.activeExam.index - 1); persistRender(); } }
+});
+setInterval(() => {
+  if (!state?.activeExam) return;
+  if (Date.now() >= state.activeExam.deadline) { submitExam(true); return; }
+  const timer = document.querySelector("#exam-timer");
+  if (timer) timer.textContent = formatTime(state.activeExam.deadline - Date.now());
+}, 1000);
+
+async function init() {
+  try {
+    const response = await fetch("./questions.json");
+    if (!response.ok) throw new Error("Question database unavailable");
+    questions = await response.json();
+    validateQuestions(questions);
+    byId = new Map(questions.map(q => [q.id, q]));
+    state = await loadState();
+    if (state.activeExam && Date.now() >= state.activeExam.deadline) await submitExam(true);
+    render();
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js", { scope: "./" }).catch(console.error);
   } catch (error) {
-    console.warn("Service worker registration failed.", error);
+    root.innerHTML = '<div class="panel empty"><h1>読み込みに失敗しました</h1><p>ページを再読み込みしてください。初回はオンライン接続が必要です。</p></div>';
+    console.error(error);
   }
 }
-
-function showUpdate(worker) {
-  waitingWorker = worker;
-  elements.updateBanner.hidden = false;
-}
-
-elements.updateButton.addEventListener("click", () => waitingWorker?.postMessage({ type: "SKIP_WAITING" }));
-
-loadState();
-bindEvents();
-applyLanguage();
-render();
-if (migratedFromLegacy) showToast("toastLegacyRestored");
-registerServiceWorker();
+init();

@@ -1,22 +1,17 @@
 {
   "id": "./",
-  "name": "Flipcard Study",
-  "short_name": "Flipcard",
-  "description": "A private, offline-first spaced-repetition flashcard app.",
-  "lang": "en",
+  "name": "飲食料品製造業 特定技能1号 · 379問",
+  "short_name": "飲食料品379問",
+  "description": "飲食料品製造業の特定技能1号・379問をオフラインで学習",
+  "lang": "ja",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#f5f7fb",
-  "theme_color": "#2563eb",
-  "categories": ["education", "productivity"],
+  "background_color": "#f7f8f5",
+  "theme_color": "#f7f8f5",
+  "categories": ["education"],
   "icons": [
-    {
-      "src": "./icon-v2.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    }
+    { "src": "./icon-v2.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
   ]
 }
