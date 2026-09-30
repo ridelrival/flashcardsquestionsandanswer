@@ -1,17 +1,20 @@
 const CACHE_PREFIX = "flashcardsquestionsandanswer-";
-const CACHE_NAME = CACHE_PREFIX + "ssw-quiz-v1";
-const SHELL = ["./", "./index.html", "./styles.css", "./app.js", "./core.js", "./storage.js",
-  "./questions.json", "./manifest.json", "./icon-v2.png"];
+const CACHE_NAME = CACHE_PREFIX + "ssw-quiz-v2";
+const SHELL = ["./", "./index.html", "./styles-v2.css", "./app-v2.js", "./core-v2.js",
+  "./storage-v2.js", "./questions.json", "./manifest.json", "./icon-v2.png"];
 
 self.addEventListener("install", event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
-    const dataResponse = await fetch(new URL("./questions.json", self.registration.scope), { cache: "reload" });
-    if (!dataResponse.ok) throw new Error("Question data unavailable during install");
-    const questions = await dataResponse.clone().json();
+    // Keep the previous worker and its complete cache until the new shell is ready.
+    await cache.addAll(SHELL);
+    const questions = await (await cache.match("./questions.json")).json();
     if (questions.length !== 379) throw new Error("Incomplete question data");
-    const images = [...new Set(questions.map(q => q.image).filter(Boolean))].map(path => "./" + path);
-    await cache.addAll([...SHELL, ...images]);
+    const images = [...new Set(questions.map(question => question.image).filter(Boolean))];
+    await Promise.allSettled(images.map(async path => {
+      const response = await fetch(new URL(path, self.registration.scope), { cache: "reload" });
+      if (response.ok) await cache.put("./" + path, response);
+    }));
     await self.skipWaiting();
   })());
 });
@@ -19,35 +22,45 @@ self.addEventListener("install", event => {
 self.addEventListener("activate", event => {
   event.waitUntil((async () => {
     for (const name of await caches.keys()) {
-      if ((name.startsWith(CACHE_PREFIX) || name === "flipcard-cache-v4.0") && name !== CACHE_NAME) await caches.delete(name);
+      if ((name.startsWith(CACHE_PREFIX) || name === "flipcard-cache-v4.0") && name !== CACHE_NAME) {
+        await caches.delete(name);
+      }
     }
     await self.clients.claim();
   })());
 });
 
+async function networkFirst(request, fallbackKey = request) {
+  const cache = await caches.open(CACHE_NAME);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  try {
+    const response = await fetch(request, { cache: "no-store", signal: controller.signal });
+    if (response.ok) {
+      try { await cache.put(fallbackKey, response.clone()); } catch (error) { console.warn("Cache write failed", error); }
+      return response;
+    }
+    return (await cache.match(fallbackKey)) || response;
+  } catch {
+    return (await cache.match(fallbackKey)) || new Response("Offline resource unavailable", { status: 503 });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 self.addEventListener("fetch", event => {
   const request = event.request;
-  if (request.method !== "GET" || new URL(request.url).origin !== self.location.origin) return;
+  const url = new URL(request.url);
+  if (request.method !== "GET" || url.origin !== self.location.origin || !url.href.startsWith(self.registration.scope)) return;
   if (request.mode === "navigate") {
-    event.respondWith((async () => {
-      try {
-        const response = await fetch(request);
-        if (response.ok) await (await caches.open(CACHE_NAME)).put("./index.html", response.clone());
-        return response;
-      } catch {
-        return (await caches.match(new URL("./index.html", self.registration.scope))) ||
-          new Response("Offline document unavailable", { status: 503 });
-      }
-    })());
+    event.respondWith(networkFirst(request, "./index.html"));
+  } else if (/\.(?:js|css|json)$/.test(url.pathname)) {
+    // Updated code and data win online; the matching v2 cache works offline.
+    event.respondWith(networkFirst(request));
   } else {
     event.respondWith((async () => {
-      const cached = await caches.match(request, { ignoreSearch: true });
-      if (cached) return cached;
-      try {
-        const response = await fetch(request);
-        if (response.ok) await (await caches.open(CACHE_NAME)).put(request, response.clone());
-        return response;
-      } catch { return new Response("Offline resource unavailable", { status: 503 }); }
+      const cache = await caches.open(CACHE_NAME);
+      return (await cache.match(request)) || networkFirst(request);
     })());
   }
 });
