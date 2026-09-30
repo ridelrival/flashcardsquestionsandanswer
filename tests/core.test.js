@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { initialState, normalizeState, orderedChoices, progressStats, recordStudyAnswer, scoreExam, selectExamQuestions, validateQuestions } from "../core.js";
+import { initialState, normalizeState, orderedChoices, progressStats, recordStudyAnswer, scoreExam, selectExamQuestions, validateQuestions } from "../core-v2.js";
 
 const questions = JSON.parse(fs.readFileSync(new URL("../questions.json", import.meta.url), "utf8"));
 const byId = new Map(questions.map(q => [q.id, q]));
