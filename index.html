@@ -10,7 +10,22 @@
   <link rel="icon" type="image/png" href="./icon-v2.png">
   <link rel="apple-touch-icon" href="./icon-v2.png">
   <link rel="stylesheet" href="./styles.css">
-  <script type="module" src="./app.js"></script>
+  <script type="module">
+    // The previous PWA serves cached scripts once before revalidating them.
+    // Clear only its obsolete app caches before loading this version's modules.
+    try {
+      if ("caches" in window) {
+        for (const name of await caches.keys()) {
+          if (name.startsWith("flashcardsquestionsandanswer-") && name !== "flashcardsquestionsandanswer-ssw-quiz-v1") {
+            await caches.delete(name);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn("Could not clear an older app cache", error);
+    }
+    await import("./app.js");
+  </script>
 </head>
 <body>
   <a class="skip-link" href="#main">本文へ移動</a>
