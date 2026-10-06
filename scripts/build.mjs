@@ -8,7 +8,7 @@ execFileSync(process.execPath, [path.join(root, "scripts", "validate-data.mjs")]
 const out = path.join(root, "dist");
 fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(out, { recursive: true });
-for (const name of ["index.html", "styles-v2.css", "app-v2.js", "core-v2.js", "storage-v2.js", "sw.js", "manifest.json", "icon-v2.png", "questions.json"]) {
+for (const name of ["index.html", "styles-v2.css", "app-v2.js", "core-v2.js", "storage-v2.js", "furigana-v2.js", "sw.js", "manifest.json", "icon-v2.png", "questions.json", "furigana.json", "image-furigana.json"]) {
   fs.copyFileSync(path.join(root, name), path.join(out, name));
 }
 fs.cpSync(path.join(root, "assets"), path.join(out, "assets"), { recursive: true });
