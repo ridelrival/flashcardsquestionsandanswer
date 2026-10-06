@@ -31,7 +31,7 @@ export function initialState() {
   return {
     storageVersion: STORAGE_VERSION, questionDataVersion: QUESTION_DATA_VERSION,
     progress: {},
-    settings: { theme: "light", shuffleQuestions: false, shuffleChoices: false, autoNext: false, choiceSeed: Math.floor(Math.random() * 2147483647) },
+    settings: { theme: "light", showFurigana: true, shuffleQuestions: false, shuffleChoices: false, autoNext: false, choiceSeed: Math.floor(Math.random() * 2147483647) },
     currentQuestionId: 1, filter: "all", sectionFilter: "all", randomOrder: [], examHistory: [], activeExam: null,
   };
 }
@@ -58,6 +58,7 @@ export function normalizeState(input) {
     ...base, progress,
     settings: {
       theme: ["light", "dark", "system"].includes(s.theme) ? s.theme : "light",
+      showFurigana: typeof s.showFurigana === "boolean" ? s.showFurigana : true,
       shuffleQuestions: Boolean(s.shuffleQuestions), shuffleChoices: Boolean(s.shuffleChoices),
       autoNext: Boolean(s.autoNext),
       choiceSeed: Number.isInteger(s.choiceSeed) ? s.choiceSeed : base.settings.choiceSeed,

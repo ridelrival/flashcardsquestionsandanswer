@@ -201,8 +201,8 @@ function renderSettings() {
   return '<p class="eyebrow">PREFERENCES</p><h1 class="page-title">設定</h1><div class="panel">'
     + '<label class="setting-row"><span><strong>テーマ</strong><small>画面の色を選択</small></span><select id="theme-select">'
     + [["system","システム"],["light","ライト"],["dark","ダーク"]].map(([v,l]) => '<option value="' + v + '"' + (s.theme === v ? " selected" : "") + '>' + l + '</option>').join("") + '</select></label>'
-    + [["shuffleQuestions","問題をシャッフル","問題番号は変わりません"],["shuffleChoices","選択肢をシャッフル","正解の対応は維持されます"],["autoNext","正解後に自動で次へ","初期設定はオフ"]]
-      .map(([key,label,desc]) => '<label class="setting-row"><span><strong>' + label + '</strong><small>' + desc + '</small></span><input type="checkbox" data-setting="' + key + '"' + (s[key] ? " checked" : "") + '></label>').join("")
+    + [["showFurigana","ふりがなを表示","漢字の読みを表示します"],["shuffleQuestions","問題をシャッフル","問題番号は変わりません"],["shuffleChoices","選択肢をシャッフル","正解の対応は維持されます"],["autoNext","正解後に自動で次へ","初期設定はオフ"]]
+      .map(([key,label,desc]) => '<label class="setting-row"><span><strong>' + label + '</strong><small>' + desc + '</small></span><input type="checkbox" data-setting="' + key + '"' + (key === "showFurigana" ? ' class="setting-toggle" role="switch"' : '') + (s[key] ? " checked" : "") + '></label>').join("")
     + '</div><div class="panel" style="margin-top:1rem"><h2>学習データ</h2><p>バックアップはJSONファイルで保存できます。インポートすると現在の進捗は置き換わります。</p>'
     + '<div class="button-row">' + button("export", "進捗をエクスポート") + button("import", "進捗をインポート") + button("reset", "進捗をリセット", "danger") + '</div>'
     + '<input type="file" id="import-file" accept="application/json,.json" hidden></div>';
@@ -214,6 +214,7 @@ function formatTime(ms) {
 function render() {
   if (!state) return;
   setTheme();
+  document.documentElement.dataset.furigana = state.settings.showFurigana ? "on" : "off";
   root.innerHTML = (notice ? '<div class="notice" role="status">' + esc(notice) + '</div>' : "")
     + (view === "home" ? renderHome() : view === "study" ? renderStudy() : view === "exam" ? renderExam() : view === "result" ? renderResult() : renderSettings());
   furigana?.decorate(document.body);

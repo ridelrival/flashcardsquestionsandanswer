@@ -26,6 +26,11 @@
 /* Furigana remains part of the line box and follows the underlying kanji. */
 ruby{ruby-position:over;ruby-align:center;white-space:nowrap}
 rt{font-size:.53em;line-height:1;font-weight:400;color:var(--muted);white-space:nowrap}
+:root[data-furigana="off"] rt,:root[data-furigana="off"] .image-ruby{display:none}
+.setting-row input.setting-toggle{appearance:none;width:3.1rem;height:1.8rem;flex:none;border:1px solid var(--line);border-radius:2rem;background:var(--line);position:relative;cursor:pointer;transition:background .15s ease}
+.setting-row input.setting-toggle::before{content:"";position:absolute;top:.16rem;left:.16rem;width:1.35rem;height:1.35rem;border-radius:50%;background:var(--ink);transition:transform .15s ease,background .15s ease}
+.setting-row input.setting-toggle:checked{background:var(--accent);border-color:var(--accent)}
+.setting-row input.setting-toggle:checked::before{transform:translateX(1.25rem);background:var(--panel)}
 .question-title,.choice,.explanation,.source,.question-meta{line-height:2}
 .header-actions button,.button,.action-card,.setting-row,.field,.ruby-select-trigger{line-height:1.9}
 .ruby-select{position:relative;min-width:0}
