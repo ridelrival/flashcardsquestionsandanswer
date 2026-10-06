@@ -47,3 +47,10 @@ test("backup normalization keeps progress by ID across question data versions", 
   assert.equal(loaded.progress[379].wrongCount, 1);
   assert.equal(loaded.progress[379].bookmarked, true);
 });
+test("furigana is on for existing progress and persists when switched off", () => {
+  const previous = initialState();
+  delete previous.settings.showFurigana;
+  assert.equal(normalizeState(previous).settings.showFurigana, true);
+  previous.settings.showFurigana = false;
+  assert.equal(normalizeState(JSON.parse(JSON.stringify(previous))).settings.showFurigana, false);
+});
