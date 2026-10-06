@@ -22,3 +22,25 @@
     color:var(--ink);background:var(--bg);color-scheme:dark
   }
 }
+
+/* Furigana remains part of the line box and follows the underlying kanji. */
+ruby{ruby-position:over;ruby-align:center;white-space:nowrap}
+rt{font-size:.53em;line-height:1;font-weight:400;color:var(--muted);white-space:nowrap}
+.question-title,.choice,.explanation,.source,.question-meta{line-height:2}
+.header-actions button,.button,.action-card,.setting-row,.field,.ruby-select-trigger{line-height:1.9}
+.ruby-select{position:relative;min-width:0}
+.ruby-select-trigger{width:100%;min-height:43px;border:1px solid var(--line);border-radius:.6rem;padding:.5rem .65rem;background:var(--panel);color:var(--ink);display:flex;align-items:center;justify-content:space-between;gap:.5rem;text-align:left}
+.ruby-select-options{position:absolute;top:calc(100% + .2rem);left:0;right:0;max-height:50vh;overflow:auto;z-index:30;background:var(--panel);border:1px solid var(--line);border-radius:.6rem;box-shadow:var(--shadow);padding:.25rem}
+.ruby-select-options[hidden]{display:none}
+.ruby-select-options button{width:100%;display:block;border:0;border-radius:.4rem;padding:.55rem .45rem;background:var(--panel);color:var(--ink);text-align:left;line-height:2}
+.ruby-select-options button:hover,.ruby-select-options button[aria-selected="true"]{background:var(--accent-soft)}
+.image-canvas{position:relative;display:block;max-width:100%;margin:0 auto .8rem;container-type:inline-size}
+.image-canvas .question-image{display:block;width:100%;height:auto;max-width:100%;max-height:none;margin:0}
+.image-ruby{position:absolute;transform:translate(-50%,-100%);font-family:"Noto Sans JP","Yu Gothic",sans-serif;font-size:clamp(2px,.76cqw,9px);line-height:1;white-space:nowrap;color:#14202d;text-shadow:1px 1px #fff,-1px 1px #fff,1px -1px #fff,-1px -1px #fff;pointer-events:none}
+.image-ruby.small-sign{font-size:clamp(2px,.49cqw,6px)}
+.image-dialog .image-canvas{margin:0 auto}
+.image-dialog .image-canvas img{width:100%;height:auto;max-width:100%;margin:0}
+@media(max-width:570px){.study-toolbar .field:nth-child(2){grid-column:1/-1}.ruby-select-options{max-height:55vh}}
+.panel>p.question-meta{display:block;overflow-wrap:anywhere}
+.image-dialog .image-canvas{max-width:none}
+.choice{min-width:0;max-width:100%}.choice-text{min-width:0;overflow-wrap:anywhere}

@@ -3,17 +3,19 @@ import {
   progressStats, recordStudyAnswer, scoreExam, selectExamQuestions, shuffled, validateQuestions,
 } from "./core-v2.js";
 import { loadState, resetState, saveState } from "./storage-v2.js";
+import { createFuriganaRenderer, validateFurigana } from "./furigana-v2.js";
 
 const root = document.querySelector("#app");
 const dialog = document.querySelector("#image-dialog");
 const imagePreview = document.querySelector("#large-image");
 let questions = [], byId = new Map(), state, view = "home", notice = "", loadFailed = false;
 let holdQuestion = null, retryId = null, reviewIndex = 0, latestResult = null, autoNextTimer = null;
+let furigana = null, imageReadings = {};
 
 function esc(value) {
   return String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 }
-function rich(value) { return esc(value).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>"); }
+function rich(value) { return (furigana ? furigana.markup(value) : esc(value)).replace(/\*\*(.+?)\*\*/gs, "<strong>$1</strong>"); }
 function imageUrl(question) { return question.image ? new URL(question.image, document.baseURI).href : ""; }
 function progress(question) { return state.progress[question.id] || null; }
 function statusClass(question) {
@@ -35,11 +37,21 @@ function setNotice(message) { notice = message; render(); }
 function button(action, label, classes = "", attrs = "") {
   return '<button type="button" class="button ' + classes + '" data-action="' + action + '" ' + attrs + '>' + label + '</button>';
 }
+function imageInfo(question) { return question.image ? imageReadings[question.image.split("/").at(-1)] : null; }
+function imageMarks(info) {
+  if (!info) return "";
+  return info.labels.map(([x, y, reading, small]) => '<span class="image-ruby' + (small ? ' small-sign' : '')
+    + '" style="left:' + (x * 100).toFixed(4) + '%;top:' + (y * 100).toFixed(4)
+    + '%" aria-hidden="true">' + esc(reading) + '</span>').join("");
+}
 function imageBlock(question) {
   if (!question.image) return "";
+  const info = imageInfo(question);
+  const img = '<img class="question-image" src="' + esc(imageUrl(question)) + '" alt="問題' + question.id + 'の参考図版" loading="eager">';
+  const content = info ? '<span class="image-canvas" style="width:min(100%,' + Math.min(info.width, info.width / info.height * 500).toFixed(2)
+    + 'px)">' + img + imageMarks(info) + '</span>' : img;
   return '<button type="button" class="image-open" data-action="image" data-id="' + question.id + '" aria-label="図版を拡大">'
-    + '<img class="question-image" src="' + esc(imageUrl(question)) + '" alt="問題' + question.id + 'の参考図版" loading="eager"></button>'
-    + '<p class="image-caption">図版をタップすると拡大できます</p>';
+    + content + '</button><p class="image-caption">図版をタップすると拡大できます</p>';
 }
 function choicesBlock(question, selected, feedback, locked, exam = false) {
   const choices = orderedChoices(question, state.settings.shuffleChoices, exam ? state.activeExam.seed : state.settings.choiceSeed);
@@ -56,16 +68,21 @@ function choicesBlock(question, selected, feedback, locked, exam = false) {
         + (locked ? "disabled" : "") + '><span class="radio" aria-hidden="true"></span><span class="choice-text">' + rich(choice.text) + '</span></button>';
     }).join("") + '</div>';
 }
-function sectionOptions() {
-  return '<option value="all">すべての分野</option>' + SECTION_LABELS.map((name, i) =>
-    '<option value="' + esc(name) + '"' + (state.sectionFilter === name ? " selected" : "") + '>第' + (i + 1) + '部 ' + esc(name.replace(/^第\d部\s*/, "")) + '</option>'
-  ).join("");
+function filterItems() {
+  return [["all", "すべて"], ["wrong", "間違えた問題"], ["unanswered", "未回答"],
+    ["bookmarked", "お気に入り"], ["random", "ランダム"]];
 }
-function filterOptions() {
-  return [
-    ["all", "すべて"], ["wrong", "間違えた問題"], ["unanswered", "未回答"],
-    ["bookmarked", "お気に入り"], ["random", "ランダム"],
-  ].map(([value, label]) => '<option value="' + value + '"' + (state.filter === value ? " selected" : "") + '>' + label + '</option>').join("");
+function sectionItems() {
+  return [["all", "すべての分野"], ...SECTION_LABELS.map((name, i) =>
+    [name, "第" + (i + 1) + "部 " + name.replace(/^第\d部\s*/, "")])];
+}
+function rubySelect(kind, value, items) {
+  const label = items.find(item => item[0] === value)?.[1] || items[0][1];
+  return '<div class="ruby-select"><button type="button" class="ruby-select-trigger" data-action="toggle-select" aria-controls="' + kind + '-options" aria-expanded="false" aria-haspopup="listbox">'
+    + rich(label) + '<span aria-hidden="true">⌄</span></button><div id="' + kind + '-options" class="ruby-select-options" role="listbox" hidden>'
+    + items.map(([key, text]) => '<button type="button" role="option" aria-selected="' + (key === value)
+      + '" data-action="select-' + kind + '" data-value="' + esc(key) + '">' + rich(text) + '</button>').join("")
+    + '</div></div>';
 }
 function renderHome() {
   const stats = progressStats(state);
@@ -121,8 +138,8 @@ function renderStudy() {
   const selected = retryId === question.id ? null : p?.lastAnswer;
   const locked = Boolean(feedback);
   return '<div class="study-layout"><div class="study-main">'
-    + '<div class="study-toolbar"><label class="field">表示する問題<select id="filter-select">' + filterOptions() + '</select></label>'
-    + '<label class="field">分野<select id="section-select">' + sectionOptions() + '</select></label>'
+    + '<div class="study-toolbar"><div class="field"><span>表示する問題</span>' + rubySelect('filter', state.filter, filterItems()) + '</div>'
+    + '<div class="field"><span>分野</span>' + rubySelect('section', state.sectionFilter, sectionItems()) + '</div>'
     + button("reshuffle", "順番を再シャッフル", "small", state.filter === "random" || state.settings.shuffleQuestions ? "" : "hidden")
     + '</div><article class="panel">'
     + imageBlock(question)
@@ -199,6 +216,7 @@ function render() {
   setTheme();
   root.innerHTML = (notice ? '<div class="notice" role="status">' + esc(notice) + '</div>' : "")
     + (view === "home" ? renderHome() : view === "study" ? renderStudy() : view === "exam" ? renderExam() : view === "result" ? renderResult() : renderSettings());
+  furigana?.decorate(document.body);
 }
 function openStudy(filter = "all") {
   state.filter = filter; state.sectionFilter = "all"; holdQuestion = null; retryId = null;
@@ -260,13 +278,36 @@ document.addEventListener("click", async event => {
   if (autoNextTimer) { clearTimeout(autoNextTimer); autoNextTimer = null; }
   if (action === "home") { view = "home"; render(); }
   else if (action === "settings") { view = "settings"; render(); }
+  else if (action === "toggle-select") {
+    const menu = target.nextElementSibling;
+    const open = menu.hidden;
+    document.querySelectorAll('.ruby-select-options').forEach(other => { other.hidden = true; other.previousElementSibling.setAttribute('aria-expanded', 'false'); });
+    menu.hidden = !open;
+    target.setAttribute('aria-expanded', String(open));
+  }
+  else if (action === "select-filter") {
+    state.filter = target.dataset.value; holdQuestion = null; retryId = null;
+    if (state.filter === "random") state.randomOrder = shuffled(questions.map(q => q.id));
+    alignCurrentQuestion(); await persistRender();
+  }
+  else if (action === "select-section") {
+    state.sectionFilter = target.dataset.value; holdQuestion = null; retryId = null;
+    alignCurrentQuestion(); await persistRender();
+  }
   else if (action === "open-study") openStudy("all");
   else if (action === "open-filter") openStudy(target.dataset.filter);
   else if (action === "continue") { state.filter = "all"; state.sectionFilter = "all"; holdQuestion = null; view = "study"; render(); }
   else if (action === "clear-filter") openStudy("all");
   else if (action === "open-exam") { view = "exam"; render(); }
   else if (action === "start-exam") startExam();
-  else if (action === "image") { const q = byId.get(id); imagePreview.src = imageUrl(q); imagePreview.alt = "問題" + id + "の参考図版"; dialog.showModal(); }
+  else if (action === "image") {
+    const q = byId.get(id), info = imageInfo(q), canvas = document.querySelector('#large-image-canvas');
+    imagePreview.src = imageUrl(q); imagePreview.alt = "問題" + id + "の参考図版";
+    canvas.style.width = info ? info.width + 'px' : 'min(100%,1100px)';
+    canvas.querySelectorAll('.image-ruby').forEach(node => node.remove());
+    if (info) canvas.insertAdjacentHTML('beforeend', imageMarks(info));
+    dialog.showModal();
+  }
   else if (action === "bookmark") {
     const p = progress(byId.get(id)) || { attemptCount: 0, correctCount: 0, wrongCount: 0, lastAnswer: null, lastResult: null, bookmarked: false };
     p.bookmarked = !p.bookmarked; state.progress[id] = p; await persistRender();
@@ -306,20 +347,37 @@ document.addEventListener("click", async event => {
 document.addEventListener("change", async event => {
   if (!state) return;
   const target = event.target;
-  if (target.id === "filter-select") {
-    state.filter = target.value; holdQuestion = null; retryId = null;
-    if (target.value === "random") state.randomOrder = shuffled(questions.map(q => q.id));
-    alignCurrentQuestion();
-    await persistRender();
-  } else if (target.id === "section-select") {
-    state.sectionFilter = target.value; holdQuestion = null; retryId = null; alignCurrentQuestion(); await persistRender();
-  } else if (target.id === "theme-select") {
+  if (target.id === "theme-select") {
     state.settings.theme = target.value; await persistRender();
   } else if (target.dataset.setting) {
     state.settings[target.dataset.setting] = target.checked;
     if (target.dataset.setting === "shuffleQuestions" && target.checked) state.randomOrder = shuffled(questions.map(q => q.id));
     await persistRender();
   } else if (target.id === "import-file" && target.files?.[0]) await importProgress(target.files[0]);
+});
+document.addEventListener('click', event => {
+  if (event.target.closest('.ruby-select')) return;
+  document.querySelectorAll('.ruby-select-options:not([hidden])').forEach(menu => {
+    menu.hidden = true;
+    menu.previousElementSibling.setAttribute('aria-expanded', 'false');
+  });
+});
+document.addEventListener('keydown', event => {
+  const trigger = event.target.closest('.ruby-select-trigger');
+  const option = event.target.closest('.ruby-select-options button');
+  const menu = trigger?.nextElementSibling || option?.parentElement;
+  if (!menu) return;
+  if (event.key === 'Escape' && !menu.hidden) {
+    event.preventDefault(); menu.hidden = true;
+    menu.previousElementSibling.setAttribute('aria-expanded', 'false');
+    menu.previousElementSibling.focus();
+  } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    event.preventDefault(); menu.hidden = false;
+    menu.previousElementSibling.setAttribute('aria-expanded', 'true');
+    const options = [...menu.querySelectorAll('button')];
+    const index = option ? options.indexOf(option) : options.findIndex(el => el.getAttribute('aria-selected') === 'true');
+    options[(index + (event.key === 'ArrowDown' ? 1 : options.length - 1)) % options.length].focus();
+  }
 });
 document.querySelector("#close-image").addEventListener("click", () => dialog.close());
 dialog.addEventListener("click", event => { if (event.target === dialog) dialog.close(); });
@@ -351,6 +409,12 @@ async function init() {
     if (!response.ok) throw new Error("Question database unavailable");
     questions = await response.json();
     validateQuestions(questions);
+    const [furiganaResponse, imageResponse] = await Promise.all([fetch('./furigana.json'), fetch('./image-furigana.json')]);
+    if (!furiganaResponse.ok || !imageResponse.ok) throw new Error('Furigana data unavailable');
+    const furiganaData = await furiganaResponse.json();
+    imageReadings = await imageResponse.json();
+    validateFurigana(questions, furiganaData);
+    furigana = createFuriganaRenderer(furiganaData);
     byId = new Map(questions.map(q => [q.id, q]));
     try { state = await loadState(); }
     catch (error) {

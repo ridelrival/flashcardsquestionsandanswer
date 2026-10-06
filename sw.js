@@ -1,7 +1,7 @@
 const CACHE_PREFIX = "flashcardsquestionsandanswer-";
-const CACHE_NAME = CACHE_PREFIX + "ssw-quiz-v2";
+const CACHE_NAME = CACHE_PREFIX + "ssw-quiz-v3-furigana";
 const SHELL = ["./", "./index.html", "./styles-v2.css", "./app-v2.js", "./core-v2.js",
-  "./storage-v2.js", "./questions.json", "./manifest.json", "./icon-v2.png"];
+  "./storage-v2.js", "./furigana-v2.js", "./questions.json", "./furigana.json", "./image-furigana.json", "./manifest.json", "./icon-v2.png"];
 
 self.addEventListener("install", event => {
   event.waitUntil((async () => {

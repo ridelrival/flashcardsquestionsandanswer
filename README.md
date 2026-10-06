@@ -31,6 +31,22 @@ npm run build
 `scripts/validate-data.mjs` checks IDs, sections, choices, correct indices, images, and orphan assets.
 `scripts/verify-pdf.py` optionally checks all 379 question markers and answer keys against the final PDF using `pypdf`.
 
+## Furigana
+
+`questions.json` remains the canonical, unchanged question data. `furigana.json`
+stores readings keyed by exact source strings; the renderer validates each base
+string before adding `<ruby><rt>` markup. This also covers UI text and metadata.
+The image JPEGs remain unchanged. `image-furigana.json` places readings over
+previously unannotated kanji in five images; images that already contain
+furigana are displayed as they are.
+
+`npm run check` verifies the question text and furigana coverage. The optional
+`scripts/generate-furigana.py` regenerates the map and an audit report from the
+canonical data. It requires `fugashi`, `unidic-lite`, `sudachipy`,
+`sudachidict_core`, and `pykakasi` locally. Review the audit and readings
+manually before replacing the checked-in map. These packages are not needed
+to run the app.
+
 ## GitHub Pages
 
 The repository root is directly deployable as the `main` branch's `/(root)` Pages source. Keep `index.html`, `sw.js`, `questions.json`, and `assets/` together. Alternatively publish the entire `dist/` directory using GitHub Actions. The manifest, service worker scope, scripts, and images all use relative URLs, so they resolve under `/flashcardsquestionsandanswer/`.

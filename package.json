@@ -7,7 +7,7 @@
     "dev": "node scripts/serve.mjs",
     "validate:data": "node scripts/validate-data.mjs",
     "test": "node --test",
-    "check": "node --check app-v2.js && node --check core-v2.js && node --check storage-v2.js && node --check sw.js && node scripts/validate-data.mjs && node --test",
+    "check": "node --check app-v2.js && node --check core-v2.js && node --check storage-v2.js && node --check sw.js && node --check furigana-v2.js && node scripts/validate-furigana.mjs && node scripts/validate-data.mjs && node --test",
     "build": "node scripts/build.mjs"
   }
 }
