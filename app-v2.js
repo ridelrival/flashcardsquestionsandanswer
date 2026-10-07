@@ -142,9 +142,9 @@ function renderStudy() {
     + '<div class="field"><span>分野</span>' + rubySelect('section', state.sectionFilter, sectionItems()) + '</div>'
     + button("reshuffle", "順番を再シャッフル", "small", state.filter === "random" || state.settings.shuffleQuestions ? "" : "hidden")
     + '</div><article class="panel">'
-    + imageBlock(question)
     + '<div class="question-meta"><span>' + esc(question.section) + '</span>'
-    + '<button type="button" class="button small" data-action="bookmark" data-id="' + question.id + '" aria-label="お気に入りを切り替える">' + (p?.bookmarked ? "★ 保存済み" : "☆ お気に入り") + '</button></div>'
+    + '<button type="button" class="button bookmark-button" data-action="bookmark" data-id="' + question.id + '" aria-label="お気に入りを切り替える" aria-pressed="' + Boolean(p?.bookmarked) + '">' + (p?.bookmarked ? "★" : "☆") + '</button></div>'
+    + imageBlock(question)
     + '<h1 class="question-title">問題 ' + question.id + '<br>' + rich(question.question) + '</h1>'
     + choicesBlock(question, selected, feedback, locked)
     + (feedback ? '<div class="feedback ' + p.lastResult + '" role="status">' + (p.lastResult === "correct" ? "正解" : "不正解") + '</div>'

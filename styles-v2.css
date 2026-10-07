@@ -55,3 +55,11 @@ rt{font-size:.53em;line-height:1;font-weight:400;color:var(--muted);white-space:
   .choice{font-size:1.25rem}
   .choice rt{font-size:.5em}
 }
+.study-main article.panel>.question-meta{align-items:flex-start;gap:.75rem;margin-bottom:.75rem}
+.study-main article.panel>.question-meta>span{min-width:0;flex:1;overflow-wrap:anywhere}
+.bookmark-button{flex:none;display:grid;place-items:center;width:44px;height:44px;min-height:44px;padding:0;font-size:1.5rem;line-height:1}
+@media(max-width:570px){
+  html,body{max-width:100%;overflow-x:hidden}
+  body{touch-action:pan-y}
+  .question-title{overflow-wrap:anywhere}
+}
