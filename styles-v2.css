@@ -62,4 +62,12 @@ rt{font-size:.53em;line-height:1;font-weight:400;color:var(--muted);white-space:
   html,body{max-width:100%;overflow-x:hidden}
   body{touch-action:pan-y}
   .question-title{overflow-wrap:anywhere}
+  .site-header{display:grid;grid-template-columns:minmax(0,1fr);gap:.65rem}
+  .brand{min-width:0}
+  .brand>span:last-child{min-width:0}
+  .brand strong,.brand small{font-size:20px}
+  .brand small{overflow-wrap:anywhere}
+  .brand-mark{width:3rem;height:3rem;flex:none;font-size:20px}
+  .header-actions{justify-content:space-between;flex-wrap:nowrap;gap:0}
+  .header-actions button{font-size:20px;line-height:1.6;padding:.35rem .25rem;white-space:nowrap}
 }
