@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "flashcardsquestionsandanswer-";
-const CACHE_NAME = CACHE_PREFIX + "ssw-quiz-v8-mobile-header-type";
+const CACHE_NAME = CACHE_PREFIX + "ssw-quiz-v9-neutral-choice-hover";
 const SHELL = ["./", "./index.html", "./styles-v2.css", "./app-v2.js", "./core-v2.js",
   "./storage-v2.js", "./furigana-v2.js", "./questions.json", "./furigana.json", "./image-furigana.json", "./manifest.json", "./icon-v2.png"];
 

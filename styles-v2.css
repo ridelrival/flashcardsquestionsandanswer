@@ -71,3 +71,10 @@ rt{font-size:.53em;line-height:1;font-weight:400;color:var(--muted);white-space:
   .header-actions{justify-content:space-between;flex-wrap:nowrap;gap:0}
   .header-actions button{font-size:20px;line-height:1.6;padding:.35rem .25rem;white-space:nowrap}
 }
+:root{--choice-hover:#f2f2f2;--choice-hover-border:#b7b7b7}
+:root[data-theme="dark"]{--choice-hover:#292929;--choice-hover-border:#707070}
+@media(prefers-color-scheme:dark){:root[data-theme="system"]{--choice-hover:#292929;--choice-hover-border:#707070}}
+.choice:hover:not(:disabled){background:var(--panel);border-color:var(--line)}
+@media(hover:hover) and (pointer:fine){
+  .choice:hover:not(:disabled){background:var(--choice-hover);border-color:var(--choice-hover-border)}
+}
