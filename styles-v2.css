@@ -49,3 +49,9 @@ rt{font-size:.53em;line-height:1;font-weight:400;color:var(--muted);white-space:
 .panel>p.question-meta{display:block;overflow-wrap:anywhere}
 .image-dialog .image-canvas{max-width:none}
 .choice{min-width:0;max-width:100%}.choice-text{min-width:0;overflow-wrap:anywhere}
+@media(max-width:570px){
+  .question-title{font-size:1.5rem}
+  .question-title rt{font-size:.5em}
+  .choice{font-size:1.25rem}
+  .choice rt{font-size:.5em}
+}
