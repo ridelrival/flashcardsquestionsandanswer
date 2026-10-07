@@ -228,11 +228,22 @@ function alignCurrentQuestion() {
   const list = filterQuestions(questions, state);
   if (list.length && !list.some(q => q.id === state.currentQuestionId)) state.currentQuestionId = list[0].id;
 }
-function navigateStudy(delta) {
+async function navigateStudy(delta, preservePosition = false) {
   const list = studyList();
   const index = list.findIndex(q => q.id === state.currentQuestionId);
   const target = list[index + delta];
-  if (target) { holdQuestion = null; retryId = null; state.currentQuestionId = target.id; persistRender(); window.scrollTo({ top: 0, behavior: "smooth" }); }
+  if (!target) return;
+  const action = delta > 0 ? "next" : "previous";
+  const keepButtonInView = preservePosition && matchMedia("(max-width: 570px)").matches;
+  const previousTop = keepButtonInView ? document.querySelector('[data-action="' + action + '"]')?.getBoundingClientRect().top : null;
+  holdQuestion = null; retryId = null; state.currentQuestionId = target.id;
+  await persistRender();
+  if (previousTop == null) { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
+  const image = document.querySelector(".question-image");
+  if (image?.decode) await image.decode().catch(() => {});
+  await new Promise(requestAnimationFrame);
+  const button = document.querySelector('[data-action="' + action + '"]');
+  if (button) window.scrollBy(0, button.getBoundingClientRect().top - previousTop);
 }
 function startExam() {
   state.activeExam = {
@@ -321,8 +332,8 @@ document.addEventListener("click", async event => {
     }
   }
   else if (action === "retry") { retryId = id; render(); }
-  else if (action === "previous") navigateStudy(-1);
-  else if (action === "next") navigateStudy(1);
+  else if (action === "previous") await navigateStudy(-1, true);
+  else if (action === "next") await navigateStudy(1, true);
   else if (action === "jump") {
     state.filter = "all"; state.sectionFilter = "all"; holdQuestion = null; retryId = null;
     state.currentQuestionId = id; view = "study"; await persistRender(); window.scrollTo(0, 0);

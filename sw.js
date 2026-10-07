@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "flashcardsquestionsandanswer-";
-const CACHE_NAME = CACHE_PREFIX + "ssw-quiz-v6-bookmark-viewport";
+const CACHE_NAME = CACHE_PREFIX + "ssw-quiz-v7-mobile-study-scroll";
 const SHELL = ["./", "./index.html", "./styles-v2.css", "./app-v2.js", "./core-v2.js",
   "./storage-v2.js", "./furigana-v2.js", "./questions.json", "./furigana.json", "./image-furigana.json", "./manifest.json", "./icon-v2.png"];
 
